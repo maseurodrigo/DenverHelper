@@ -1,0 +1,10 @@
+{
+  "DiscordBotPrefix": "jj",
+  "DiscordBotToken": "",
+  "MySQLConnect": {
+    "Server": "",
+    "UserID": "",
+    "UserPW": "",
+    "Database": ""
+  }
+}
