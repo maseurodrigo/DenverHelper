@@ -29,7 +29,6 @@ namespace DiscordDenver.Modules
             var strBuilder = new StringBuilder();
             // Embed layout reply
             var replyEmbed = new EmbedBuilder();
-            // Add some options to the embed (like color and title)
             replyEmbed.WithColor(new Color(33, 150, 243));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -88,7 +87,6 @@ namespace DiscordDenver.Modules
             var strBuilder = new StringBuilder();
             // Embed layout reply
             var replyEmbed = new EmbedBuilder();
-            // Add some options to the embed (like color and title)
             replyEmbed.WithColor(new Color(139, 195, 74));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -197,7 +195,6 @@ namespace DiscordDenver.Modules
             var strBuilder = new StringBuilder();
             // Embed layout reply
             var replyEmbed = new EmbedBuilder();
-            // Add some options to the embed (like color and title)
             replyEmbed.WithColor(new Color(139, 195, 74));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -286,7 +283,6 @@ namespace DiscordDenver.Modules
         public async Task getPlayerData([Remainder][Summary("Player name")] String _player) {
             // Embed layout reply
             var replyEmbed = new EmbedBuilder();
-            // Add some options to the embed (like color and title)
             Color embedColor = new Color(77, 182, 172);
             replyEmbed.WithColor(embedColor);
             // Trigger typing state on current channel
@@ -298,7 +294,6 @@ namespace DiscordDenver.Modules
                 try {
                     // Embed layout reply
                     var listPlayersEmbed = new EmbedBuilder();
-                    // Add some options to the embed (like color and title)
                     listPlayersEmbed.WithColor(embedColor);
                     Dictionary<int, PlayerData> listPlayers = new Dictionary<int, PlayerData>();
                     // Check if the results are too many 

@@ -31,7 +31,6 @@ namespace DiscordDenver.Modules
             var strBuilder = new StringBuilder();
             // Embed layout reply
             var replyEmbed = new EmbedBuilder();
-            // Add some options to the embed (like color and title)
             replyEmbed.WithColor(new Color(33, 150, 243));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -84,7 +83,6 @@ namespace DiscordDenver.Modules
             var strBuilder = new StringBuilder();
             // Embed layout reply
             var replyEmbed = new EmbedBuilder();
-            // Add some options to the embed (like color and title)
             replyEmbed.WithColor(new Color(0, 150, 136));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -127,7 +125,6 @@ namespace DiscordDenver.Modules
         public async Task getTeamMembers([Remainder][Summary("Team name")] String _teamName) {
             // Embed layout reply
             var replyEmbed = new EmbedBuilder();
-            // Add some options to the embed (like color and title)
             replyEmbed.WithColor(new Color(139, 195, 74));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();

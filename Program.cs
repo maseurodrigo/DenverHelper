@@ -39,6 +39,7 @@ namespace DiscordDenver
                     .AddSingleton(discordCommands)
                     .AddSingleton(discordInteractive)
                     .AddSingleton(localMySQLConnect)
+                    .AddSingleton(localAPIsData)
                     .BuildServiceProvider();
                 await this.discordCommands.AddModulesAsync(Assembly.GetEntryAssembly(), discordService);
                 // Create connection between bot and discord server (API)
@@ -68,11 +69,10 @@ namespace DiscordDenver
         }
 
         private async Task client_NewCommandReceived(SocketMessage message) {
-            // Block interaction with commands for DMs
+            // Block commands through DMs
             if (message.Channel is SocketDMChannel) return;
-            // React to webhook messages from bots
-            if (message.Author.IsBot && !message.Author.Id.Equals(discordClient.CurrentUser.Id)) 
-                await message.AddReactionAsync(new Emoji("🤙"));
+            // Block messages from verified bots
+            if (message.Author.IsBot) return;
             else {
                 int argPos = 0;
                 SocketUserMessage discMessage = message as SocketUserMessage;

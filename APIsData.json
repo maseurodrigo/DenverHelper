@@ -1,6 +1,7 @@
 {
   "DiscordBotPrefix": "jj",
   "DiscordBotToken": "",
+  "DiscordSuperAdmin": "",
   "MySQLConnect": {
     "Server": "",
     "UserID": "",

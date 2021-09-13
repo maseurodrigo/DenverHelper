@@ -7,6 +7,7 @@ using Discord;
 using Discord.Commands;
 using Discord.Net;
 using Discord.WebSocket;
+using DiscordDenver.Data;
 using DiscordDenver.Data.MySQL;
 
 namespace DiscordDenver.Modules
@@ -17,9 +18,11 @@ namespace DiscordDenver.Modules
         // Getting all commands through constructor param with AddSingleton()
         private readonly CommandService commandService;
         private MySQLConnect mySQLConnect;
-        private DiscordComms(CommandService _commandService, MySQLConnect _MySQLConnect) { 
+        private ulong discordSuperAdmin;
+        private DiscordComms(CommandService _commandService, APIsData _localAPIsData, MySQLConnect _MySQLConnect) {
             this.commandService = _commandService;
             this.mySQLConnect = _MySQLConnect;
+            this.discordSuperAdmin = _localAPIsData.SuperAdmin;
         }
 
         [Command("help")]
@@ -34,8 +37,8 @@ namespace DiscordDenver.Modules
             GuildPermissions userGuildPerms = contextUser.GuildPermissions;
             // List of commands to exclude from help list
             Dictionary<String, bool> commsToExclude = new Dictionary<String, bool>() {
-                { "help", false }, { "mysqlreconn", true }, { "addkey", true }, 
-                { "delkey", true }, { "dmuser", true }
+                { "help", false }, { "mysqlreconn", false },
+                { "addkey", true }, { "delkey", true }, { "dmuser", true }
             };
             foreach (CommandInfo command in allCommands) {
                 if (commsToExclude.ContainsKey(command.Name)) {
@@ -78,18 +81,19 @@ namespace DiscordDenver.Modules
 
         [Command("mysqlreconn")]
         [Alias("mysql_reconn", "mysqlreconnect", "mysql_reconnect")]
-        [RequireUserPermission(GuildPermission.Administrator)]
         [RequireBotPermission(ChannelPermission.SendMessages)]
         [Summary("Resets the session state of the current opened mySQL connection")]
         public async Task reconnectMySQL() {
-            // Embed layout reply
-            EmbedBuilder replyEmbed = new EmbedBuilder();
-            // Trigger typing state on current channel
-            await Context.Channel.TriggerTypingAsync();
-            await mySQLConnect.reConnect();
-            replyEmbed.Description = "Reconnecting...";
-            // Reply with the embed
-            await ReplyAsync(null, false, replyEmbed.Build());
+            if (Context.User.Id.Equals(discordSuperAdmin)) {
+                // Embed layout reply
+                EmbedBuilder replyEmbed = new EmbedBuilder();
+                // Trigger typing state on current channel
+                await Context.Channel.TriggerTypingAsync();
+                await mySQLConnect.reConnect();
+                replyEmbed.Description = "Reconnecting...";
+                // Reply with the embed
+                await ReplyAsync(null, false, replyEmbed.Build());
+            }
         }
 
         [Command("addkey")]
@@ -100,7 +104,6 @@ namespace DiscordDenver.Modules
         public async Task setNewAPIKey([Summary("API Key")] String _apiKey) {
             // Embed layout reply
             EmbedBuilder replyEmbed = new EmbedBuilder();
-            // Add some options to the embed (like color and title)
             replyEmbed.WithColor(new Color(144, 164, 174));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -125,7 +128,6 @@ namespace DiscordDenver.Modules
         public async Task removeAPIKey() {
             // Embed layout reply
             EmbedBuilder replyEmbed = new EmbedBuilder();
-            // Add some options to the embed (like color and title)
             replyEmbed.WithColor(new Color(144, 164, 174));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -144,7 +146,6 @@ namespace DiscordDenver.Modules
         public async Task getTotalServerComms() {
             // Embed layout reply
             EmbedBuilder replyEmbed = new EmbedBuilder();
-            // Add some options to the embed (like color and title)
             replyEmbed.WithColor(new Color(186, 104, 200));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -161,7 +162,6 @@ namespace DiscordDenver.Modules
         public async Task searchServerComms([Summary("Server Comm")] String _serverComm) {
             // Embed layout reply
             EmbedBuilder replyEmbed = new EmbedBuilder();
-            // Add some options to the embed (like color and title)
             replyEmbed.WithColor(new Color(186, 104, 200));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -182,7 +182,6 @@ namespace DiscordDenver.Modules
         public async Task getDataComm([Summary("Command")] String _comm) {
             // Embed layout reply
             EmbedBuilder replyEmbed = new EmbedBuilder();
-            // Add some options to the embed (like color and title)
             replyEmbed.WithColor(new Color(186, 104, 200));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -202,7 +201,6 @@ namespace DiscordDenver.Modules
         public async Task setNewComm([Summary("Command")] String _comm, [Remainder][Summary("Command data")] String _commData) {
             // Embed layout reply
             EmbedBuilder replyEmbed = new EmbedBuilder();
-            // Add some options to the embed (like color and title)
             replyEmbed.WithColor(new Color(186, 104, 200));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -225,7 +223,6 @@ namespace DiscordDenver.Modules
         public async Task removeComm([Summary("Command")] String _comm) {
             // Embed layout reply
             EmbedBuilder replyEmbed = new EmbedBuilder();
-            // Add some options to the embed (like color and title)
             replyEmbed.WithColor(new Color(186, 104, 200));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -241,7 +238,7 @@ namespace DiscordDenver.Modules
         [RequireBotPermission(ChannelPermission.SendMessages)]
         [Summary("Create a new poll with, custom or not, answers using emojis")]
         public async Task newPoll([Remainder][Summary("Full poll query")] String _fullArgs) {
-            if(!(Context.Message.Channel is IDMChannel)) {
+            if (!(Context.Message.Channel is IDMChannel)) {
                 EmbedBuilder pollEmbed = new EmbedBuilder();
                 // Verify if exists question and answers
                 String strQuestion = _fullArgs.Split('|')[0].Trim();
@@ -279,7 +276,7 @@ namespace DiscordDenver.Modules
                             IUserMessage sent = await ReplyAsync(null, false, pollEmbed.Build());
                             // Add reactions to the poll.
                             await sent.AddReactionsAsync(emojiCodes.ToArray());
-                        } catch(HttpException excep) {
+                        } catch (HttpException excep) {
                             pollEmbed.Description = $"{ excep.HttpCode }: { excep.Message }";
                             await ReplyAsync(null, false, pollEmbed.Build());
                         } catch (IndexOutOfRangeException) {
@@ -310,7 +307,6 @@ namespace DiscordDenver.Modules
         public async Task dmUser(IGuildUser _user, [Remainder][Summary("DM message")] String _message) {
             // Embed layout reply
             EmbedBuilder replyEmbed = new EmbedBuilder();
-            // Add some options to the embed (like color and title)
             replyEmbed.WithColor(new Color(220, 231, 117));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -332,7 +328,6 @@ namespace DiscordDenver.Modules
         public async Task dmAll([Remainder][Summary("DM message")] String _message) {
             // Embed layout reply
             EmbedBuilder replyEmbed = new EmbedBuilder();
-            // Add some options to the embed (like color and title)
             replyEmbed.WithColor(new Color(220, 231, 117));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -348,6 +343,29 @@ namespace DiscordDenver.Modules
                 } replyEmbed.Description = $"{ dmCounter } DMs sent!";
             } catch (HttpException) {
                 replyEmbed.Description = "I'm sorry, but an error occurred during the operation";
+            }
+            // Reply with the embed
+            await ReplyAsync(null, false, replyEmbed.Build());
+        }
+
+        [Command("random")]
+        [Alias("rand")]
+        [RequireBotPermission(ChannelPermission.SendMessages)]
+        [Summary("Generate random data for the information provided")]
+        public async Task randomData([Remainder][Summary("Data to randomize")] String _message) {
+            // Embed layout reply
+            EmbedBuilder replyEmbed = new EmbedBuilder();
+            replyEmbed.WithColor(new Color(144, 164, 174));
+            // Trigger typing state on current channel
+            await Context.Channel.TriggerTypingAsync();
+            try {
+                if (_message.Contains(",")) {
+                    // Get all parameters to randomize
+                    String[] arrayData = _message.Split(",");
+                    replyEmbed.Description = $"{ arrayData[new Random().Next(0, arrayData.Length)].Trim() } was the chosen!";
+                }
+            } catch (ArgumentOutOfRangeException) {
+                replyEmbed.Description = "I'm sorry, but an error occurred during the random operation";
             }
             // Reply with the embed
             await ReplyAsync(null, false, replyEmbed.Build());
