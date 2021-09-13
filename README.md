@@ -2,7 +2,7 @@
 
   + Get current status of bot connection
     + **!connection**
-  + Resets the session state of the current opened MySQL connection
+  + Resets the session state of the current opened MySQL connection (**exclusive to SuperAdmin**)
     + **!mysqlreconn**
   + Set new API key to be assigned to current server
     + **!addkey**
@@ -22,6 +22,8 @@
     + **!dmuser**
   + Send a private message to all server members
     + **!dmall**
+  + Generate random data for the information provided
+    + **!random**
   + Get the timezone and current weather conditions for multiple locations
     + **!city**
   + Get some informations about a given football team
@@ -41,6 +43,7 @@
 {
   "DiscordBotPrefix": "!",
   "DiscordBotToken": "...",
+  "DiscordSuperAdmin": "",
   "MySQLConnect": {
     "Server": "",
     "UserID": "",
