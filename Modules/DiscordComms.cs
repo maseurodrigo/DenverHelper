@@ -17,12 +17,10 @@ namespace DiscordDenver.Modules
     {
         // Getting all commands through constructor param with AddSingleton()
         private readonly CommandService commandService;
-        private MySQLConnect mySQLConnect;
-        private ulong discordSuperAdmin;
-        private DiscordComms(CommandService _commandService, APIsData _localAPIsData, MySQLConnect _MySQLConnect) {
+        private BotData botData;
+        private DiscordComms(CommandService _commandService, BotData _BotData) {
             this.commandService = _commandService;
-            this.mySQLConnect = _MySQLConnect;
-            this.discordSuperAdmin = _localAPIsData.SuperAdmin;
+            this.botData = _BotData;
         }
 
         [Command("help")]
@@ -37,7 +35,7 @@ namespace DiscordDenver.Modules
             GuildPermissions userGuildPerms = contextUser.GuildPermissions;
             // List of commands to exclude from help list
             Dictionary<String, bool> commsToExclude = new Dictionary<String, bool>() {
-                { "help", false }, { "mysqlreconn", false }, { "addkey", true }, { "delkey", true }
+                { "help", false }, { "addkey", true }, { "delkey", true }
             };
             foreach (CommandInfo command in allCommands) {
                 if (commsToExclude.ContainsKey(command.Name)) {
@@ -73,26 +71,8 @@ namespace DiscordDenver.Modules
             embedBuilder.AddField("Connection", currentConn, true);
             if (currentConn.Equals(ConnectionState.Connected))
                 embedBuilder.AddField("Latency", $"{ Context.Client.Latency } ms", true);
-            embedBuilder.AddField("MySQL Connection", mySQLConnect.myConn.State, true);
             // Reply with the embed
             await ReplyAsync(null, false, embedBuilder.Build());
-        }
-
-        [Command("mysqlreconn")]
-        [Alias("mysql_reconn", "mysqlreconnect", "mysql_reconnect")]
-        [RequireBotPermission(ChannelPermission.SendMessages)]
-        [Summary("Resets the session state of the current opened mySQL connection")]
-        public async Task reconnectMySQL() {
-            if (Context.User.Id.Equals(discordSuperAdmin)) {
-                // Embed layout reply
-                EmbedBuilder replyEmbed = new EmbedBuilder();
-                // Trigger typing state on current channel
-                await Context.Channel.TriggerTypingAsync();
-                await mySQLConnect.reConnect();
-                replyEmbed.Description = "Reconnecting...";
-                // Reply with the embed
-                await ReplyAsync(null, false, replyEmbed.Build());
-            }
         }
 
         [Command("addkey")]
@@ -106,13 +86,16 @@ namespace DiscordDenver.Modules
             replyEmbed.WithColor(new Color(144, 164, 174));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
-            if (await MySQLAPIKeys.checkAPIKeyExists(mySQLConnect.myConn, Context.Guild.Id)) {
-                await MySQLAPIKeys.changeAPIKey(mySQLConnect.myConn, Context.Guild.Id, _apiKey.Trim(), Context.User.Id);
+            MySQLConnect conn = new MySQLConnect(botData);
+            if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
+                await MySQLAPIKeys.changeAPIKey(conn, Context.Guild.Id, _apiKey.Trim(), Context.User.Id);
                 replyEmbed.Description = "API key renewed";
             } else {
-                await MySQLAPIKeys.newAPIKey(mySQLConnect.myConn, Context.Guild.Id, _apiKey.Trim(), Context.User.Id);
+                await MySQLAPIKeys.newAPIKey(conn, Context.Guild.Id, _apiKey.Trim(), Context.User.Id);
                 replyEmbed.Description = "API key set";
             }
+            // Close local connection
+            await conn.closeConnection();
             // Delete user's message
             await Context.Message.DeleteAsync();
             // Reply with the embed
@@ -130,10 +113,13 @@ namespace DiscordDenver.Modules
             replyEmbed.WithColor(new Color(144, 164, 174));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
-            if (await MySQLAPIKeys.checkAPIKeyExists(mySQLConnect.myConn, Context.Guild.Id)) {
-                await MySQLAPIKeys.deleteAPIKey(mySQLConnect.myConn, Context.Guild.Id);
+            MySQLConnect conn = new MySQLConnect(botData);
+            if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
+                await MySQLAPIKeys.deleteAPIKey(conn, Context.Guild.Id);
                 replyEmbed.Description = "API key removed";
             } else replyEmbed.Description = "API key for this server not found on DB";
+            // Close local connection
+            await conn.closeConnection();
             // Reply with the embed
             await ReplyAsync(null, false, replyEmbed.Build());
         }
@@ -148,8 +134,11 @@ namespace DiscordDenver.Modules
             replyEmbed.WithColor(new Color(186, 104, 200));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
-            int totalComms = await MySQLComms.getTotalComms(mySQLConnect.myConn, Context.Guild.Id);
+            MySQLConnect conn = new MySQLConnect(botData);
+            int totalComms = await MySQLComms.getTotalComms(conn, Context.Guild.Id);
             replyEmbed.Description = $"There are { totalComms } commands for this server";
+            // Close local connection
+            await conn.closeConnection();
             // Reply with the embed
             await ReplyAsync(null, false, replyEmbed.Build());
         }
@@ -165,11 +154,14 @@ namespace DiscordDenver.Modules
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
             // List of all available commands
-            Dictionary<String, String> allCommands = await MySQLComms.getCommsList(mySQLConnect.myConn, Context.Guild.Id, _serverComm.Trim());
+            MySQLConnect conn = new MySQLConnect(botData);
+            Dictionary<String, String> allCommands = await MySQLComms.getCommsList(conn, Context.Guild.Id, _serverComm.Trim());
             foreach (KeyValuePair<String, String> command in allCommands) {
                 // Get the command Summary attribute information
                 replyEmbed.AddField(CultureInfo.CurrentCulture.TextInfo.ToTitleCase(command.Key.ToLower()), command.Value);
             }
+            // Close local connection
+            await conn.closeConnection();
             // Reply with the embed
             await ReplyAsync(null, false, replyEmbed.Build());
         }
@@ -184,10 +176,13 @@ namespace DiscordDenver.Modules
             replyEmbed.WithColor(new Color(186, 104, 200));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
-            if (await MySQLComms.checkCommExists(mySQLConnect.myConn, Context.Guild.Id, _comm.Trim())) {
-                String dataComm = await MySQLComms.getCommData(mySQLConnect.myConn, Context.Guild.Id, _comm.Trim());
+            MySQLConnect conn = new MySQLConnect(botData);
+            if (await MySQLComms.checkCommExists(conn, Context.Guild.Id, _comm.Trim())) {
+                String dataComm = await MySQLComms.getCommData(conn, Context.Guild.Id, _comm.Trim());
                 replyEmbed.AddField(CultureInfo.CurrentCulture.TextInfo.ToTitleCase(_comm.Trim().ToLower()), dataComm);
             } else replyEmbed.Description = "Command not found for this server";
+            // Close local connection
+            await conn.closeConnection();
             // Reply with the embed
             await ReplyAsync(null, false, replyEmbed.Build());
         }
@@ -203,13 +198,16 @@ namespace DiscordDenver.Modules
             replyEmbed.WithColor(new Color(186, 104, 200));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
-            if (await MySQLComms.checkCommExists(mySQLConnect.myConn, Context.Guild.Id, _comm.Trim())) {
-                await MySQLComms.changeCommand(mySQLConnect.myConn, Context.Guild.Id, _comm.Trim(), _commData.Trim(), Context.User.Id);
+            MySQLConnect conn = new MySQLConnect(botData);
+            if (await MySQLComms.checkCommExists(conn, Context.Guild.Id, _comm.Trim())) {
+                await MySQLComms.changeCommand(conn, Context.Guild.Id, _comm.Trim(), _commData.Trim(), Context.User.Id);
                 replyEmbed.Description = "Command renewed";
             } else {
-                await MySQLComms.newCommand(mySQLConnect.myConn, Context.Guild.Id, Context.Channel.Id, _comm.Trim(), _commData.Trim(), Context.User.Id);
+                await MySQLComms.newCommand(conn, Context.Guild.Id, Context.Channel.Id, _comm.Trim(), _commData.Trim(), Context.User.Id);
                 replyEmbed.Description = "Command added";
             }
+            // Close local connection
+            await conn.closeConnection();
             // Reply with the embed
             await ReplyAsync(null, false, replyEmbed.Build());
         }
@@ -225,10 +223,13 @@ namespace DiscordDenver.Modules
             replyEmbed.WithColor(new Color(186, 104, 200));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
-            if (await MySQLComms.checkCommExists(mySQLConnect.myConn, Context.Guild.Id, _comm.Trim())) {
-                await MySQLComms.deleteCommand(mySQLConnect.myConn, Context.Guild.Id, _comm.Trim());
+            MySQLConnect conn = new MySQLConnect(botData);
+            if (await MySQLComms.checkCommExists(conn, Context.Guild.Id, _comm.Trim())) {
+                await MySQLComms.deleteCommand(conn, Context.Guild.Id, _comm.Trim());
                 replyEmbed.Description = "Command removed";
             } else replyEmbed.Description = "Command not found for this server";
+            // Close local connection
+            await conn.closeConnection();
             // Reply with the embed
             await ReplyAsync(null, false, replyEmbed.Build());
         }

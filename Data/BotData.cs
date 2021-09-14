@@ -3,10 +3,9 @@ using Newtonsoft.Json;
 
 namespace DiscordDenver.Data
 {
-    public class APIsData {
+    public class BotData {
         [JsonProperty("DiscordBotPrefix")] public String BotPrefix { get; set; }
         [JsonProperty("DiscordBotToken")] public String BotToken { get; set; }
-        [JsonProperty("DiscordSuperAdmin")] public ulong SuperAdmin { get; set; }
         [JsonProperty("MySQLConnect")] public MySQLConnectData MySQLConnect { get; set; }
     }
 

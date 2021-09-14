@@ -22,15 +22,11 @@ namespace DiscordDenver
         private CommandService discordCommands;
         private InteractiveService discordInteractive;
         private IServiceProvider discordService;
-        private APIsData localAPIsData;
-        private MySQLConnect localMySQLConnect;
+        private BotData localBotData;
 
         public async Task BotKeepAsync() {
             try {
-                this.localAPIsData = JsonConvert.DeserializeObject<APIsData>(File.ReadAllText(@"APIsData.json"));
-                this.localMySQLConnect = new MySQLConnect(localAPIsData.MySQLConnect.ServerID, localAPIsData.MySQLConnect.UserID, 
-                    localAPIsData.MySQLConnect.UserPW, localAPIsData.MySQLConnect.Database);
-                await localMySQLConnect.newConnection(); // GCloud new connection
+                this.localBotData = JsonConvert.DeserializeObject<BotData>(File.ReadAllText(@"BotData.json"));
                 this.discordClient = new DiscordSocketClient(new DiscordSocketConfig() { LogLevel = LogSeverity.Info, AlwaysDownloadUsers = true });
                 this.discordCommands = new CommandService(new CommandServiceConfig() { LogLevel = LogSeverity.Info, CaseSensitiveCommands = false });
                 this.discordInteractive = new InteractiveService(discordClient);
@@ -38,15 +34,14 @@ namespace DiscordDenver
                     .AddSingleton(discordClient)
                     .AddSingleton(discordCommands)
                     .AddSingleton(discordInteractive)
-                    .AddSingleton(localMySQLConnect)
-                    .AddSingleton(localAPIsData)
+                    .AddSingleton(localBotData)
                     .BuildServiceProvider();
                 await this.discordCommands.AddModulesAsync(Assembly.GetEntryAssembly(), discordService);
                 // Create connection between bot and discord server (API)
-                await discordClient.LoginAsync(TokenType.Bot, localAPIsData.BotToken);
+                await discordClient.LoginAsync(TokenType.Bot, localBotData.BotToken);
                 await discordClient.StartAsync();
                 await discordClient.SetStatusAsync(UserStatus.Online); // Setting online status
-                await discordClient.SetGameAsync($"{ localAPIsData.BotPrefix }help", null, ActivityType.Listening); // Listening status
+                await discordClient.SetGameAsync($"{ localBotData.BotPrefix }help", null, ActivityType.Listening); // Listening status
                 // Enable discord bot feedback regarding bot commands in text channels
                 discordClient.MessageReceived += client_NewCommandReceived;
                 discordClient.Log += botLogEvents;
@@ -77,7 +72,7 @@ namespace DiscordDenver
                 int argPos = 0;
                 SocketUserMessage discMessage = message as SocketUserMessage;
                 // Detect whether the entered text will be associated with a command
-                if (discMessage.HasStringPrefix(localAPIsData.BotPrefix, ref argPos)) {
+                if (discMessage.HasStringPrefix(localBotData.BotPrefix, ref argPos)) {
                     SocketCommandContext mssgContext = new SocketCommandContext(discordClient, discMessage);
                     await discordCommands.ExecuteAsync(mssgContext, argPos, discordService);
                 }

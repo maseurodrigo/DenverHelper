@@ -9,6 +9,7 @@ using Discord.Addons.Interactive;
 using Discord.Commands;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using DiscordDenver.Data;
 using DiscordDenver.Data.Functions;
 using DiscordDenver.Data.MySQL;
 
@@ -18,8 +19,8 @@ namespace DiscordDenver.Modules
     public class DiscordInteractive : InteractiveBase
     {
         private readonly InteractiveService _interactiveService;
-        private MySQLConnect mySQLConnect;
-        private DiscordInteractive(MySQLConnect _MySQLConnect) { this.mySQLConnect = _MySQLConnect; }
+        private BotData botData;
+        private DiscordInteractive(BotData _BotData) { this.botData = _BotData; }
 
         [Command("convert", RunMode = RunMode.Async)]
         [RequireBotPermission(ChannelPermission.SendMessages)]
@@ -32,7 +33,8 @@ namespace DiscordDenver.Modules
             replyEmbed.WithColor(new Color(33, 150, 243));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
-            if (await MySQLAPIKeys.checkAPIKeyExists(mySQLConnect.myConn, Context.Guild.Id)) {
+            MySQLConnect conn = new MySQLConnect(botData);
+            if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
                 try {
                     // Waiting for an input of a valid numeric value
                     await ReplyAsync("Amount of dollars ?");
@@ -45,8 +47,8 @@ namespace DiscordDenver.Modules
                             // Trigger typing state on current channel
                             await Context.Channel.TriggerTypingAsync();
                             // Get JSON data of the given crypto name from API
-                            String APIKey = await MySQLAPIKeys.getAPIKey(mySQLConnect.myConn, Context.Guild.Id);
-                            object jsonData = JsonConvert.DeserializeObject<Object>(APIsFunctions.getCryptoData(APIKey, _coin));
+                            String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
+                            object jsonData = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getCryptoData(APIKey, _coin));
                             // Crypto token object
                             JToken token = ((JObject)jsonData)["symbol"];
                             if (token.Type == JTokenType.Null || token.Type == JTokenType.Undefined) {
@@ -75,6 +77,8 @@ namespace DiscordDenver.Modules
                     replyEmbed.Description = "I couldn't get results for this command";
                 }
             } else replyEmbed.Description = "API key for this server not found on DB";
+            // Close local connection
+            await conn.closeConnection();
             // Reply with the embed
             await ReplyAsync(null, false, replyEmbed.Build());
         }
@@ -90,9 +94,10 @@ namespace DiscordDenver.Modules
             replyEmbed.WithColor(new Color(139, 195, 74));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
-            if (await MySQLAPIKeys.checkAPIKeyExists(mySQLConnect.myConn, Context.Guild.Id)) {
+            MySQLConnect conn = new MySQLConnect(botData);
+            if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
                 // Get JSON data of the given team next matches from API
-                String APIKey = await MySQLAPIKeys.getAPIKey(mySQLConnect.myConn, Context.Guild.Id);
+                String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
                 object jsonData_Team = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getAPIFootballTeams(APIKey, 4, null, _teamName.Trim().ToLower(), null, null, null));
                 try {
                     List<String> typeOptions = new List<String>() { "NEXT", "LAST" };
@@ -182,6 +187,8 @@ namespace DiscordDenver.Modules
                     replyEmbed.Description = "I couldn't get results for this command";
                 }
             } else replyEmbed.Description = "API key for this server not found on DB";
+            // Close local connection
+            await conn.closeConnection();
             // Reply with the embed
             await ReplyAsync(null, false, replyEmbed.Build());
         }
@@ -198,9 +205,10 @@ namespace DiscordDenver.Modules
             replyEmbed.WithColor(new Color(139, 195, 74));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
-            if (await MySQLAPIKeys.checkAPIKeyExists(mySQLConnect.myConn, Context.Guild.Id)) {
+            MySQLConnect conn = new MySQLConnect(botData);
+            if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
                 // Get JSON data of the given team next matches from API
-                String APIKey = await MySQLAPIKeys.getAPIKey(mySQLConnect.myConn, Context.Guild.Id);
+                String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
                 object jsonData_Team = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getAPIFootballTeams(APIKey, 4, null, _teamName.Trim().ToLower(), null, null, null));
                 try {
                     // Waiting for an input of a valid numeric value
@@ -255,6 +263,8 @@ namespace DiscordDenver.Modules
                     replyEmbed.Description = "I couldn't get results for this command";
                 }
             } else replyEmbed.Description = "API key for this server not found on DB";
+            // Close local connection
+            await conn.closeConnection();
             // Reply with the embed
             await ReplyAsync(null, false, replyEmbed.Build());
         }
@@ -287,9 +297,10 @@ namespace DiscordDenver.Modules
             replyEmbed.WithColor(embedColor);
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
-            if (await MySQLAPIKeys.checkAPIKeyExists(mySQLConnect.myConn, Context.Guild.Id)) {
+            MySQLConnect conn = new MySQLConnect(botData);
+            if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
                 // Get JSON data of the given city from APIs
-                String APIKey = await MySQLAPIKeys.getAPIKey(mySQLConnect.myConn, Context.Guild.Id);
+                String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
                 object tmpPlayerData = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getAPIFootballPlayers(APIKey, 1, null, _player.Trim().ToLower(), null));
                 try {
                     // Embed layout reply
@@ -375,6 +386,8 @@ namespace DiscordDenver.Modules
                     replyEmbed.Description = excep.Message;
                 }
             } else replyEmbed.Description = "API key for this server not found on DB";
+            // Close local connection
+            await conn.closeConnection();
             // Reply with the embed
             await ReplyAsync(null, false, replyEmbed.Build());
         }

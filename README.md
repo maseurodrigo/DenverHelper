@@ -2,8 +2,6 @@
 
   + Get current status of bot connection
     + **!connection**
-  + Resets the session state of the current opened MySQL connection (**exclusive to SuperAdmin**)
-    + **!mysqlreconn**
   + Set new API key to be assigned to current server
     + **!addkey**
   + Delete API key thats assigned to the current server
@@ -45,7 +43,6 @@
 {
   "DiscordBotPrefix": "!",
   "DiscordBotToken": "...",
-  "DiscordSuperAdmin": "",
   "MySQLConnect": {
     "Server": "",
     "UserID": "",
