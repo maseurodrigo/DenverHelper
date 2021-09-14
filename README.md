@@ -18,9 +18,11 @@
     + **!newcomm**
   + Delete command thats assigned to the current server
     + **!deletecomm**
-  + Send a private message to a unique server member
+  + Send a DM to a unique server member
     + **!dmuser**
-  + Send a private message to all server members
+  + Send a DM for users with a given role assigned
+    + **!dmrole**
+  + Send a DM to all server members
     + **!dmall**
   + Generate random data for the information provided
     + **!random**

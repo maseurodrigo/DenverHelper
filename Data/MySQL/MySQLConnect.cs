@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Data;
 using System.Threading.Tasks;
 using MySqlConnector;
 
@@ -23,7 +22,6 @@ namespace DiscordDenver.Data.MySQL
             myConn = new MySqlConnection(myConnBuilder.ConnectionString);
             await myConn.OpenAsync();
         }
-        public ConnectionState checkConnection() { return myConn.State; }
         // Resets the session state of the current open connection
         public async Task reConnect() { await myConn.ResetConnectionAsync(); }
         // Close current GCloud MySQL connection

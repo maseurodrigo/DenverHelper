@@ -1,5 +1,5 @@
 {
-  "DiscordBotPrefix": "jj",
+  "DiscordBotPrefix": "!",
   "DiscordBotToken": "",
   "DiscordSuperAdmin": "",
   "MySQLConnect": {

@@ -32,13 +32,12 @@ namespace DiscordDenver.Modules
             List<CommandInfo> allCommands = commandService.Commands.ToList();
             EmbedBuilder embedBuilder = new EmbedBuilder();
             EmbedBuilder embedAdminBuilder = new EmbedBuilder();
-            // Instance current mes data
+            // Instance context user data
             SocketGuildUser contextUser = Context.User as SocketGuildUser;
             GuildPermissions userGuildPerms = contextUser.GuildPermissions;
             // List of commands to exclude from help list
             Dictionary<String, bool> commsToExclude = new Dictionary<String, bool>() {
-                { "help", false }, { "mysqlreconn", false },
-                { "addkey", true }, { "delkey", true }, { "dmuser", true }
+                { "help", false }, { "mysqlreconn", false }, { "addkey", true }, { "delkey", true }
             };
             foreach (CommandInfo command in allCommands) {
                 if (commsToExclude.ContainsKey(command.Name)) {
@@ -74,7 +73,7 @@ namespace DiscordDenver.Modules
             embedBuilder.AddField("Connection", currentConn, true);
             if (currentConn.Equals(ConnectionState.Connected))
                 embedBuilder.AddField("Latency", $"{ Context.Client.Latency } ms", true);
-            embedBuilder.AddField("MySQL Connection", mySQLConnect.checkConnection(), true);
+            embedBuilder.AddField("MySQL Connection", mySQLConnect.myConn.State, true);
             // Reply with the embed
             await ReplyAsync(null, false, embedBuilder.Build());
         }
@@ -314,6 +313,35 @@ namespace DiscordDenver.Modules
                 // Exclude message author and bots
                 if (!Context.User.Id.Equals(_user.Id) && !_user.IsBot) await _user.SendMessageAsync(_message);
                 replyEmbed.Description = $"DM sent to { (String.IsNullOrWhiteSpace(_user.Nickname) ? _user.Username : _user.Nickname) }";
+            } catch (HttpException) {
+                replyEmbed.Description = "I'm sorry, but an error occurred during the operation";
+            }
+            // Reply with the embed
+            await ReplyAsync(null, false, replyEmbed.Build());
+        }
+
+        [Command("dmrole")]
+        [RequireUserPermission(GuildPermission.ManageGuild)]
+        [RequireBotPermission(ChannelPermission.SendMessages)]
+        [Summary("Send a private message for users with a given role assigned")]
+        public async Task dmRole(IRole _role, [Remainder][Summary("DM message")] String _message) {
+            // Embed layout reply
+            EmbedBuilder replyEmbed = new EmbedBuilder();
+            replyEmbed.WithColor(new Color(220, 231, 117));
+            // Trigger typing state on current channel
+            await Context.Channel.TriggerTypingAsync();
+            try {
+                int dmCounter = 0;
+                // Loop through all (cached) server users
+                foreach (SocketGuildUser serverUser in Context.Guild.Users) {
+                    // Exclude message author and bots
+                    if (!Context.User.Id.Equals(serverUser.Id) && !serverUser.IsBot) {
+                        if (serverUser.Roles.Contains(_role)) {
+                            await serverUser.SendMessageAsync(_message);
+                            dmCounter++;
+                        }
+                    }
+                } replyEmbed.Description = $"{ dmCounter } DMs sent!";
             } catch (HttpException) {
                 replyEmbed.Description = "I'm sorry, but an error occurred during the operation";
             }
