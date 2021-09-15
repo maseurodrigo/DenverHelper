@@ -18,7 +18,6 @@ namespace DiscordDenver.Modules
     [Summary("Interactive Data Commands")]
     public class DiscordInteractive : InteractiveBase
     {
-        private readonly InteractiveService _interactiveService;
         private BotData botData;
         private DiscordInteractive(BotData _BotData) { this.botData = _BotData; }
 

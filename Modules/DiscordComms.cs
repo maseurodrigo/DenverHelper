@@ -321,7 +321,7 @@ namespace DiscordDenver.Modules
             await ReplyAsync(null, false, replyEmbed.Build());
         }
 
-        [Command("dmrole")]
+        [Command("dmrole", RunMode = RunMode.Async)]
         [RequireUserPermission(GuildPermission.ManageGuild)]
         [RequireBotPermission(ChannelPermission.SendMessages)]
         [Summary("Send a private message for users with a given role assigned")]
@@ -331,49 +331,61 @@ namespace DiscordDenver.Modules
             replyEmbed.WithColor(new Color(220, 231, 117));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
-            try {
-                int dmCounter = 0;
-                // Loop through all (cached) server users
-                foreach (SocketGuildUser serverUser in Context.Guild.Users) {
+            int dmsSuccess = 0, dmsError = 0;
+            // Loop through all (cached) server users
+            foreach (SocketGuildUser serverUser in Context.Guild.Users) {
+                try {
                     // Exclude message author and bots
-                    if (!Context.User.Id.Equals(serverUser.Id) && !serverUser.IsBot) {
-                        if (serverUser.Roles.Contains(_role)) {
-                            await serverUser.SendMessageAsync(_message);
-                            dmCounter++;
-                        }
+                    if (!Context.User.Id.Equals(serverUser.Id) && !serverUser.IsBot 
+                    && serverUser.Roles.Contains(_role)) {
+                        await serverUser.SendMessageAsync(_message);
+                        dmsSuccess++;
                     }
-                } replyEmbed.Description = $"{ dmCounter } DMs sent!";
-            } catch (HttpException) {
-                replyEmbed.Description = "I'm sorry, but an error occurred during the operation";
+                } catch (HttpException) {
+                    // Counter of users which DM could not be sent
+                    dmsError++;
+                }
             }
             // Reply with the embed
+            replyEmbed.Description = $"{ dmsSuccess } DM(s) were sent and { dmsError } were not!";
             await ReplyAsync(null, false, replyEmbed.Build());
         }
 
-        [Command("dmall")]
+        [Command("dmall", RunMode = RunMode.Async)]
         [RequireUserPermission(GuildPermission.ManageGuild)]
         [RequireBotPermission(ChannelPermission.SendMessages)]
         [Summary("Send a private message to all server members")]
         public async Task dmAll([Remainder][Summary("DM message")] String _message) {
             // Embed layout reply
+            Color embedColor = new Color(220, 231, 117);
             EmbedBuilder replyEmbed = new EmbedBuilder();
-            replyEmbed.WithColor(new Color(220, 231, 117));
+            replyEmbed.WithColor(embedColor);
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
-            try {
-                int dmCounter = 0;
-                // Loop through all (cached) server users
-                foreach (SocketGuildUser serverUser in Context.Guild.Users) {
+            // Alert for servers with large number of users
+            if (Context.Guild.Users.Count >= 100) {
+                EmbedBuilder usersEmbed = new EmbedBuilder();
+                usersEmbed.WithColor(embedColor);
+                usersEmbed.Description = "This operation will take some time, when it's finished I'll post the results here";
+                await ReplyAsync(null, false, usersEmbed.Build());
+            }
+            int dmsSuccess = 0, dmsError = 0;
+            // Loop through all (cached) server users
+            foreach (SocketGuildUser serverUser in Context.Guild.Users) {
+                try {
                     // Exclude message author and bots
                     if (!Context.User.Id.Equals(serverUser.Id) && !serverUser.IsBot) {
                         await serverUser.SendMessageAsync(_message);
-                        dmCounter++;
+                        dmsSuccess++;
                     }
-                } replyEmbed.Description = $"{ dmCounter } DMs sent!";
-            } catch (HttpException) {
-                replyEmbed.Description = "I'm sorry, but an error occurred during the operation";
+                } catch (HttpException) {
+                    // Counter of users which DM could not be sent
+                    dmsError++;
+                }
             }
             // Reply with the embed
+            replyEmbed.AddField($"DMs sent", dmsSuccess, true);
+            replyEmbed.AddField($"Unsent DMs", dmsError, true);
             await ReplyAsync(null, false, replyEmbed.Build());
         }
 
