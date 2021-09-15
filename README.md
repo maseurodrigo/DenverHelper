@@ -23,7 +23,7 @@
   + Send a DM to all server members
     + **!dmall**
   + Generate random data for the information provided
-    + **!random**
+    + **!random** (options splitted by comma(","))
   + Get the timezone and current weather conditions for multiple locations
     + **!city**
   + Get some informations about a given football team
