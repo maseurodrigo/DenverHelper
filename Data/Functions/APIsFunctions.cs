@@ -35,7 +35,7 @@ namespace DiscordDenver.Data.Functions
             return respJSON.Content;
         }
 
-        public static async Task<String> getAPIFootballTeams(String _RapidAPIKey, int _apiCall, int? _idTeam, String _teamName, int? _numGames, int? _idMatch, int? _season) {
+        public static async Task<String> getAPISoccerTeams(String _RapidAPIKey, int _apiCall, int? _idTeam, String _teamName, int? _numGames, int? _idMatch, int? _season) {
             RestClient restClient = new RestClient();
             switch (_apiCall) {
                 case 1:
@@ -66,7 +66,7 @@ namespace DiscordDenver.Data.Functions
             return respJSON.Content;
         }
 
-        public static async Task<String> getAPIFootballPlayers(String _RapidAPIKey, int _apiCall, int? _idPlayer, String _playerName, int? _season) {
+        public static async Task<String> getAPISoccerPlayers(String _RapidAPIKey, int _apiCall, int? _idPlayer, String _playerName) {
             RestClient restClient = new RestClient();
             switch (_apiCall) {
                 case 1:

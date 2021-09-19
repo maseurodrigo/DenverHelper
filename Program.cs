@@ -1,82 +1,59 @@
 ﻿using System;
 using System.IO;
-using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
 using DiscordDenver.Data;
-using DiscordDenver.Data.MySQL;
+using DiscordDenver.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using Victoria;
 
 namespace DiscordDenver
 {
     class Program
     {
-        public static void Main(string[] args) => new Program().BotKeepAsync().GetAwaiter().GetResult();
+        public static async Task Main(string[] args) => await BotKeepAsync();
 
-        // Discord default vars.
-        private DiscordSocketClient discordClient;
-        private CommandService discordCommands;
-        private InteractiveService discordInteractive;
-        private IServiceProvider discordService;
-        private BotData localBotData;
-
-        public async Task BotKeepAsync() {
+        public static async Task BotKeepAsync() {
+            // Discord client configurations
+            DiscordSocketClient discordClient = new DiscordSocketClient(new DiscordSocketConfig() {
+                AlwaysDownloadUsers = true,
+                LogLevel = LogSeverity.Info,
+                MessageCacheSize = 500
+            });
+            ServiceCollection discordService = new ServiceCollection();
+            CommandServiceConfig serviceConfig = new CommandServiceConfig() {
+                CaseSensitiveCommands = false,
+                DefaultRunMode = RunMode.Async,
+                LogLevel = LogSeverity.Info
+            };
             try {
-                this.localBotData = JsonConvert.DeserializeObject<BotData>(File.ReadAllText(@"BotData.json"));
-                this.discordClient = new DiscordSocketClient(new DiscordSocketConfig() { LogLevel = LogSeverity.Info, AlwaysDownloadUsers = true });
-                this.discordCommands = new CommandService(new CommandServiceConfig() { LogLevel = LogSeverity.Info, CaseSensitiveCommands = false });
-                this.discordInteractive = new InteractiveService(discordClient);
-                this.discordService = new ServiceCollection()
+                // Load up from JSON file all bot required data
+                BotData botData = JsonConvert.DeserializeObject<BotData>(File.ReadAllText(@"BotData.json"));
+                discordService
                     .AddSingleton(discordClient)
-                    .AddSingleton(discordCommands)
-                    .AddSingleton(discordInteractive)
-                    .AddSingleton(localBotData)
-                    .BuildServiceProvider();
-                await this.discordCommands.AddModulesAsync(Assembly.GetEntryAssembly(), discordService);
-                // Create connection between bot and discord server (API)
-                await discordClient.LoginAsync(TokenType.Bot, localBotData.BotToken);
-                await discordClient.StartAsync();
-                await discordClient.SetStatusAsync(UserStatus.Online); // Setting online status
-                await discordClient.SetGameAsync($"{ localBotData.BotPrefix }help", null, ActivityType.Listening); // Listening status
-                // Enable discord bot feedback regarding bot commands in text channels
-                discordClient.MessageReceived += client_NewCommandReceived;
-                discordClient.Log += botLogEvents;
-                // Block task untill the program is closed
-                await Task.Delay(-1);
+                    .AddSingleton(new CommandService(serviceConfig))
+                    .AddSingleton(new InteractiveService(discordClient))
+                    .AddLavaNode(client => {
+                        client.Port = 2333;
+                        client.Hostname = "host.docker.internal";
+                        client.SelfDeaf = true;
+                        client.EnableResume = true;
+                    }).AddSingleton<CommHandler>()
+                    .AddSingleton<BotService>()
+                    .AddSingleton(botData);
             } catch (FileNotFoundException excep) {
                 Console.WriteLine(excep.Message);
             }
-        }
-
-        private async Task CurrentDomain_ProcessExit(object sender, EventArgs e) {
-            // Disconnection bot from the discord server (API)
-            await discordClient.StopAsync();
-            await discordClient.LogoutAsync();
-        }
-
-        private Task botLogEvents(LogMessage arg) {
-            Console.WriteLine(arg.ToString());
-            return Task.CompletedTask;
-        }
-
-        private async Task client_NewCommandReceived(SocketMessage message) {
-            // Block commands through DMs
-            if (message.Channel is SocketDMChannel) return;
-            // Block messages from verified bots
-            if (message.Author.IsBot) return;
-            else {
-                int argPos = 0;
-                SocketUserMessage discMessage = message as SocketUserMessage;
-                // Detect whether the entered text will be associated with a command
-                if (discMessage.HasStringPrefix(localBotData.BotPrefix, ref argPos)) {
-                    SocketCommandContext mssgContext = new SocketCommandContext(discordClient, discMessage);
-                    await discordCommands.ExecuteAsync(mssgContext, argPos, discordService);
-                }
-            }
+            ServiceProvider serviceProvider = discordService.BuildServiceProvider();
+            serviceProvider.GetRequiredService<CommHandler>();
+            // Start discord bot connection asynchronous
+            await serviceProvider.GetRequiredService<BotService>().StartAsync();
+            // Block task untill the program is closed
+            await Task.Delay(-1);
         }
     }
 }

@@ -34,8 +34,7 @@ namespace DiscordDenver.Data.MySQL
         // Operation to manage parameterized data from DB
         public async Task manageData(String strSQL, List<MySqlParameter> listParams) {
             // If conn. its closed make a new connection
-            if (myConn is null || myConn.State.Equals(ConnectionState.Closed)) 
-                await newConnection();
+            if (myConn is null || myConn.State.Equals(ConnectionState.Closed)) await newConnection();
             using (MySqlCommand mySQLComm = new MySqlCommand(strSQL, myConn)) {
                 // Loop through all sqlparams
                 foreach (MySqlParameter param in listParams) mySQLComm.Parameters.Add(param);
@@ -46,8 +45,7 @@ namespace DiscordDenver.Data.MySQL
         // Operation to get parameterized data from DB (ExecuteReaderAsync)
         public async Task<String> getReaderData(String strSQL, List<MySqlParameter> listParams) {
             // If conn. its closed make a new connection
-            if (myConn is null || myConn.State.Equals(ConnectionState.Closed)) 
-                await newConnection();
+            if (myConn is null || myConn.State.Equals(ConnectionState.Closed)) await newConnection();
             using (MySqlCommand mySQLComm = new MySqlCommand(strSQL, myConn)) {
                 // Loop through all sqlparams
                 foreach (MySqlParameter param in listParams) mySQLComm.Parameters.Add(param);
@@ -60,8 +58,7 @@ namespace DiscordDenver.Data.MySQL
 
         public async Task<Dictionary<String, String>> getReaderListData(String strSQL, List<MySqlParameter> listParams) {
             // If conn. its closed make a new connection
-            if (myConn is null || myConn.State.Equals(ConnectionState.Closed)) 
-                await newConnection();
+            if (myConn is null || myConn.State.Equals(ConnectionState.Closed)) await newConnection();
             Dictionary<String, String> commsList = new Dictionary<String, String>();
             using (MySqlCommand mySQLComm = new MySqlCommand(strSQL, myConn)) {
                 // Loop through all sqlparams
@@ -77,8 +74,7 @@ namespace DiscordDenver.Data.MySQL
         // Operation to get parameterized data from DB (ExecuteScalarAsync)
         public async Task<int> getScalarData(String strSQL, List<MySqlParameter> listParams) {
             // If conn. its closed make a new connection
-            if (myConn is null || myConn.State.Equals(ConnectionState.Closed)) 
-                await newConnection();
+            if (myConn is null || myConn.State.Equals(ConnectionState.Closed)) await newConnection();
             using (MySqlCommand mySQLComm = new MySqlCommand(strSQL, myConn)) {
                 // Loop through all sqlparams
                 foreach (MySqlParameter param in listParams) mySQLComm.Parameters.Add(param);

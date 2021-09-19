@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  dotnet:
+    container_name: discorddenver
+    image: discorddenver:latest
+    build: 
+      dockerfile: Dockerfile
+    restart: always
+  lavalink:
+    container_name: lavalink
+    image: lavalink:latest
+    build: 
+      dockerfile: ./Lavalink/Dockerfile
+    restart: always
+    ports:
+      - '2333:2333'
