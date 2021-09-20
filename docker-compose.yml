@@ -1,7 +1,7 @@
-version: '3.8'
+version: '3.9'
 services:
   dotnet:
-    container_name: discorddenver
+    container_name: dotnet
     image: discorddenver:latest
     build:
       context: ./
@@ -11,6 +11,7 @@ services:
     container_name: lavalink
     image: lavalink:latest
     build:
+      context: ./Lavalink/
       dockerfile: ./Lavalink/Dockerfile
     restart: always
     ports:
