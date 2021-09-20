@@ -10,8 +10,8 @@ USER lavalink
 WORKDIR /app
 
 # Copy everything else and build
-COPY ./Lavalink/Lavalink.jar Lavalink.jar
-COPY ./Lavalink/application.yml application.yml
+COPY ./Lavalink/Lavalink.jar ./Lavalink/Lavalink.jar
+COPY ./Lavalink/application.yml ./Lavalink/application.yml
 
 # Internal port expose
 EXPOSE 2333
