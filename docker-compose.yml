@@ -11,7 +11,7 @@ services:
     container_name: lavalink
     image: lavalink:latest
     build:
-      context: ./Lavalink/
+      context: ./
       dockerfile: ./Lavalink/Dockerfile
     restart: always
     ports:
