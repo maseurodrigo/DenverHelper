@@ -35,33 +35,9 @@ namespace DiscordDenver.Modules
             await ReplyAsync(null, false, embedBuilder.Build());
         }
 
-        [Command("join")]
-        [Summary("Connect the bot to the current voice channel")]
-        public async Task joinAsync() {
-            EmbedBuilder userVChannel = new EmbedBuilder();
-            userVChannel.Color = embedsColor;
-            // Lava client it's already present on a voice channel
-            if (lavaNode.HasPlayer(Context.Guild)) {
-                userVChannel.Description = $"I'm already connected to a voice channel";
-                await ReplyAsync(null, false, userVChannel.Build(), null, null, new MessageReference(Context.Message.Id));
-                return;
-            }
-            // User it's not present on any voice channel
-            var voiceState = Context.User as IVoiceState;
-            if (voiceState?.VoiceChannel == null) {
-                userVChannel.Description = $"I can't join you in Narnia, please join a voice channel";
-                await ReplyAsync(null, false, userVChannel.Build(), null, null, new MessageReference(Context.Message.Id));
-                return;
-            }
-            try {
-                await lavaNode.JoinAsync(voiceState.VoiceChannel, Context.Channel as ITextChannel);
-            } catch (Exception exception) {
-                await ReplyAsync(exception.Message);
-            }
-        }
-
         [Command("leave")]
-        [Summary("Disconnect the bot to the current voice channel")]
+        [RequireBotPermission(ChannelPermission.SendMessages)]
+        [Summary("Disconnect the bot from the current voice channel")]
         public async Task leaveAsync() {
             EmbedBuilder userVChannel = new EmbedBuilder();
             userVChannel.Color = embedsColor;
@@ -72,17 +48,18 @@ namespace DiscordDenver.Modules
                 return;
             }
             // User it's not present on any voice channel
-            var voiceState = Context.User as IVoiceState;
-            if (voiceState?.VoiceChannel == null) {
+            IVoiceState voiceState = Context.User as IVoiceState;
+            if (voiceState?.VoiceChannel is null) {
                 userVChannel.Description = $"I don't accept orders from Narnia, please join a voice channel";
                 await ReplyAsync(null, false, userVChannel.Build(), null, null, new MessageReference(Context.Message.Id));
                 return;
             }
-            try {
-                await lavaNode.LeaveAsync(voiceState.VoiceChannel);
-            } catch (Exception exception) {
-                await ReplyAsync(exception.Message);
-            }
+            // Assign LavaPlayer to the current discord server
+            LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
+            // User in a different vchannel than bot
+            if (!voiceState.VoiceChannel.Equals(currentPlayer.VoiceChannel)) { return; }
+            try { await lavaNode.LeaveAsync(voiceState.VoiceChannel); } 
+            catch (Exception exception) { await ReplyAsync(exception.Message); }
         }
 
         [Command("play")]
@@ -90,14 +67,24 @@ namespace DiscordDenver.Modules
         [RequireBotPermission(ChannelPermission.SendMessages)]
         [Summary("Start playing a music or playlist from YouTube")]
         public async Task playYouTubeAsync([Remainder][Summary("YouTube query")] String _ytQuery) {
+            IVoiceState voiceState = Context.User as IVoiceState;
             // Lava client it's not present on any voice channel
             if (!lavaNode.HasPlayer(Context.Guild)) {
                 EmbedBuilder botVChannel = new EmbedBuilder();
                 botVChannel.Color = embedsColor;
-                botVChannel.Description = $"I'm not connected to a voice channel";
-                await ReplyAsync(null, false, botVChannel.Build(), null, null, new MessageReference(Context.Message.Id));
-                return;
+                // User it's not present on any voice channel
+                if (voiceState?.VoiceChannel is null) {
+                    botVChannel.Description = $"I can't join you in Narnia, please join a voice channel";
+                    await ReplyAsync(null, false, botVChannel.Build(), null, null, new MessageReference(Context.Message.Id));
+                    return;
+                }
+                try { await lavaNode.JoinAsync(voiceState.VoiceChannel, Context.Channel as ITextChannel); } 
+                catch (Exception exception) { await ReplyAsync(exception.Message); }
             }
+            // Assign LavaPlayer to the current discord server
+            LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
+            // User in a different vchannel than bot
+            if (voiceState?.VoiceChannel is null || !voiceState.VoiceChannel.Equals(currentPlayer.VoiceChannel)) { return; }
             // Checking if query string its an URL
             if (_ytQuery.StartsWith("https") || _ytQuery.StartsWith("http")) {
                 // Invalid URLs
@@ -118,9 +105,7 @@ namespace DiscordDenver.Modules
                 await ReplyAsync(null, false, noMatches.Build(), null, null, new MessageReference(Context.Message.Id));
                 return;
             }
-            // Assign LavaPlayer to the current discord server
-            LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
-            // If LavaPlayer its active (playing)
+            // If LavaPlayer its active (Playing/Paused)
             if (currentPlayer.PlayerState is PlayerState.Playing || currentPlayer.PlayerState is PlayerState.Paused) {
                 if (!String.IsNullOrWhiteSpace(searchResp.Playlist.Name)) {
                     foreach (var track in searchResp.Tracks) currentPlayer.Queue.Enqueue(track);
@@ -160,14 +145,24 @@ namespace DiscordDenver.Modules
         [RequireBotPermission(ChannelPermission.SendMessages)]
         [Summary("Start playing a music or playlist from SoundCloud")]
         public async Task playSoundCloudAsync([Remainder][Summary("SoundCloud query")] String _ytQuery) {
+            IVoiceState voiceState = Context.User as IVoiceState;
             // Lava client it's not present on any voice channel
             if (!lavaNode.HasPlayer(Context.Guild)) {
                 EmbedBuilder botVChannel = new EmbedBuilder();
                 botVChannel.Color = embedsColor;
-                botVChannel.Description = $"I'm not connected to a voice channel";
-                await ReplyAsync(null, false, botVChannel.Build(), null, null, new MessageReference(Context.Message.Id));
-                return;
+                // User it's not present on any voice channel
+                if (voiceState?.VoiceChannel is null) {
+                    botVChannel.Description = $"I can't join you in Narnia, please join a voice channel";
+                    await ReplyAsync(null, false, botVChannel.Build(), null, null, new MessageReference(Context.Message.Id));
+                    return;
+                }
+                try { await lavaNode.JoinAsync(voiceState.VoiceChannel, Context.Channel as ITextChannel); } 
+                catch (Exception exception) { await ReplyAsync(exception.Message); }
             }
+            // Assign LavaPlayer to the current discord server
+            LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
+            // User in a different vchannel than bot
+            if (voiceState?.VoiceChannel is null || !voiceState.VoiceChannel.Equals(currentPlayer.VoiceChannel)) { return; }
             // Checking if query string its an URL
             if (_ytQuery.StartsWith("https") || _ytQuery.StartsWith("http")) { return; }
             SearchResponse searchResp = await lavaNode.SearchSoundCloudAsync(_ytQuery);
@@ -179,9 +174,7 @@ namespace DiscordDenver.Modules
                 await ReplyAsync(null, false, noMatches.Build(), null, null, new MessageReference(Context.Message.Id));
                 return;
             }
-            // Assign LavaPlayer to the current discord server
-            LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
-            // If LavaPlayer its active (playing)
+            // If LavaPlayer its active (Playing/Paused)
             if (currentPlayer.PlayerState is PlayerState.Playing || currentPlayer.PlayerState is PlayerState.Paused) {
                 if (!String.IsNullOrWhiteSpace(searchResp.Playlist.Name)) {
                     foreach (var track in searchResp.Tracks) currentPlayer.Queue.Enqueue(track);
@@ -223,7 +216,7 @@ namespace DiscordDenver.Modules
         public async Task skipNextTrack() {
             // User nor bot it's not present on any voice channel
             IVoiceState voiceState = Context.User as IVoiceState;
-            if (voiceState.VoiceChannel is null || !lavaNode.HasPlayer(Context.Guild)) { return; }
+            if (voiceState?.VoiceChannel is null || !lavaNode.HasPlayer(Context.Guild)) { return; }
             LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
             // User in a different vchannel than bot
             if (!voiceState.VoiceChannel.Equals(currentPlayer.VoiceChannel)) { return; }
@@ -247,7 +240,7 @@ namespace DiscordDenver.Modules
         public async Task pausePlayer() {
             // User nor bot it's not present on any voice channel
             IVoiceState voiceState = Context.User as IVoiceState;
-            if (voiceState.VoiceChannel is null || !lavaNode.HasPlayer(Context.Guild)) { return; }
+            if (voiceState?.VoiceChannel is null || !lavaNode.HasPlayer(Context.Guild)) { return; }
             LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
             // User in a different vchannel than bot
             if (!voiceState.VoiceChannel.Equals(currentPlayer.VoiceChannel)) { return; }
@@ -262,7 +255,7 @@ namespace DiscordDenver.Modules
         public async Task resumePlayer() {
             // User nor bot it's not present on any voice channel
             IVoiceState voiceState = Context.User as IVoiceState;
-            if (voiceState.VoiceChannel is null || !lavaNode.HasPlayer(Context.Guild)) { return; }
+            if (voiceState?.VoiceChannel is null || !lavaNode.HasPlayer(Context.Guild)) { return; }
             LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
             // User in a different vchannel than bot
             if (!voiceState.VoiceChannel.Equals(currentPlayer.VoiceChannel)) { return; }
@@ -276,7 +269,7 @@ namespace DiscordDenver.Modules
         public async Task stopPlayer() {
             // User nor bot it's not present on any voice channel
             IVoiceState voiceState = Context.User as IVoiceState;
-            if (voiceState.VoiceChannel is null || !lavaNode.HasPlayer(Context.Guild)) { return; }
+            if (voiceState?.VoiceChannel is null || !lavaNode.HasPlayer(Context.Guild)) { return; }
             LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
             // User in a different vchannel than bot
             if (!voiceState.VoiceChannel.Equals(currentPlayer.VoiceChannel)) { return; }
@@ -292,7 +285,7 @@ namespace DiscordDenver.Modules
         public async Task listQueue() {
             // User nor bot it's not present on any voice channel
             IVoiceState voiceState = Context.User as IVoiceState;
-            if (voiceState.VoiceChannel is null || !lavaNode.HasPlayer(Context.Guild)) { return; }
+            if (voiceState?.VoiceChannel is null || !lavaNode.HasPlayer(Context.Guild)) { return; }
             // User in a different vchannel than bot
             LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
             if (!voiceState.VoiceChannel.Equals(currentPlayer.VoiceChannel)) { return; }
@@ -316,7 +309,7 @@ namespace DiscordDenver.Modules
             try {
                 // User nor bot it's not present on any voice channel
                 IVoiceState voiceState = Context.User as IVoiceState;
-                if (voiceState.VoiceChannel is null) { return; }
+                if (voiceState?.VoiceChannel is null) { return; }
                 if (!lavaNode.TryGetPlayer(Context.Guild, out LavaPlayer currentPlayer)) { return; }
                 // User in a different vchannel than bot
                 if (!voiceState.VoiceChannel.Equals(currentPlayer.VoiceChannel)) { return; }

@@ -12,14 +12,13 @@
 | **dmrole** |  | Send a DM for users with a given role assigned |
 | **dmall** |  | Send a DM to all server members |
 | **random** | **rand** | Generate random data for the information provided - **(options splitted by ',' or '/')** |
-| **join** |  | Connect the bot to the current voice channel |
-| **leave** |  | Disconnect the bot to the current voice channel |
 | **play** | **youtube** | Start playing a music or playlist from YouTube |
 | **scplay** | **soundcloud** | Start playing a music or playlist from SoundCloud |
 | **skip** | **next** | Skip to next track in queue |
 | **pause** |  | Pause current discord player |
 | **resume** |  | Resume current discord player |
 | **stop** |  | Stop discord player and finish the current queue |
+| **leave** |  | Disconnect the bot from the current voice channel |
 | **queue** |  | List all the tracks that are currently on queue |
 | **lyrics** |  | Searching for current track lyrics |
 | **city** | **weather** | Get the timezone and current weather conditions for multiple locations |
