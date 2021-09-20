@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -18,7 +19,7 @@ namespace DiscordDenver.Modules
     {
         // Getting all services through constructor param with AddSingleton()
         private readonly LavaNode lavaNode;
-        private static readonly IEnumerable<int> Range = Enumerable.Range(1900, 2000);
+        private static readonly IEnumerable<int> enumRange = Enumerable.Range(1900, 2000);
         private static readonly Color embedsColor = new Color(244, 67, 54);
         public MusicComms(LavaNode _lavaNode) => this.lavaNode = _lavaNode;
 
@@ -34,81 +35,189 @@ namespace DiscordDenver.Modules
             await ReplyAsync(null, false, embedBuilder.Build());
         }
 
-        [Command("play")]
-        [RequireBotPermission(ChannelPermission.SendMessages)]
-        [Summary("Connect the bot to the current voice channel and start a music or playlist")]
-        public async Task playAsync([Remainder][Summary("Youtube query")] String _ytQuery) {
-            // Invalid URLs
-            if (_ytQuery.StartsWith("https") || _ytQuery.StartsWith("http")) {
-                if (!HttpUtility.ParseQueryString(new Uri(_ytQuery).Query).HasKeys()) { return; }
+        [Command("join")]
+        [Summary("Connect the bot to the current voice channel")]
+        public async Task joinAsync() {
+            EmbedBuilder userVChannel = new EmbedBuilder();
+            userVChannel.Color = embedsColor;
+            // Lava client it's already present on a voice channel
+            if (lavaNode.HasPlayer(Context.Guild)) {
+                userVChannel.Description = $"I'm already connected to a voice channel";
+                await ReplyAsync(null, false, userVChannel.Build(), null, null, new MessageReference(Context.Message.Id));
+                return;
             }
-            // Lava client it's not present on any voice channel
-            if (!lavaNode.HasPlayer(Context.Guild)) {
-                // User it's not present on any voice channel
-                IVoiceState voiceState = Context.User as IVoiceState;
-                if (voiceState.VoiceChannel is null) {
-                    EmbedBuilder userVChannel = new EmbedBuilder();
-                    userVChannel.Color = embedsColor;
-                    userVChannel.Description = $"I can't play anything in narnia, please join a voice channel";
-                    await ReplyAsync(null, false, userVChannel.Build(), null, null, new MessageReference(Context.Message.Id));
-                    return;
-                }
-                try {
-                    await lavaNode.JoinAsync(voiceState.VoiceChannel, Context.Channel as ITextChannel);
-                } catch (Exception excep) {
-                    await ReplyAsync(excep.Message);
-                }
+            // User it's not present on any voice channel
+            var voiceState = Context.User as IVoiceState;
+            if (voiceState?.VoiceChannel == null) {
+                userVChannel.Description = $"I can't join you in Narnia, please join a voice channel";
+                await ReplyAsync(null, false, userVChannel.Build(), null, null, new MessageReference(Context.Message.Id));
+                return;
             }
-            String[] _ytQueries = _ytQuery.Split(' ');
-            foreach (String query in _ytQueries) {
-                SearchResponse searchResp = await lavaNode.SearchYouTubeAsync(query);
-                // Couldnt find anything for the query param given
-                if (searchResp.Status is SearchStatus.LoadFailed || searchResp.Status is SearchStatus.NoMatches) {
-                    EmbedBuilder noMatches = new EmbedBuilder();
-                    noMatches.Color = embedsColor;
-                    noMatches.Description = $"I didn't find anything about `{ query }` on mars but I can look it up in narnia";
-                    await ReplyAsync(null, false, noMatches.Build(), null, null, new MessageReference(Context.Message.Id));
-                    return;
-                }
-                // Assign LavaPlayer to the current discord server
-                LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
-                // If LavaPlayer its active (playing)
-                if (currentPlayer.PlayerState is PlayerState.Playing || currentPlayer.PlayerState is PlayerState.Paused) {
-                    if (!String.IsNullOrWhiteSpace(searchResp.Playlist.Name)) {
-                        foreach (var track in searchResp.Tracks) currentPlayer.Queue.Enqueue(track);
-                        // Enqueued track embed
-                        EmbedBuilder inQueue = new EmbedBuilder();
-                        inQueue.Color = embedsColor;
-                        inQueue.Description = $"Currently { searchResp.Tracks.Count } tracks in queue";
-                        await ReplyAsync(null, false, inQueue.Build());
-                    } else {
-                        // With track name -> elemAt(0)
-                        LavaTrack track = searchResp.Tracks.ElementAt(0);
-                        currentPlayer.Queue.Enqueue(track);
-                        // Enqueued track embed
-                        EmbedBuilder enQueued = new EmbedBuilder();
-                        enQueued.Color = embedsColor;
-                        enQueued.Description = $"Enqueued: `{ track.Title }`";
-                        await ReplyAsync(null, false, enQueued.Build());
-                    }
-                } else {
-                    // When LavaPlayer its idle trigger a PlayAsync
-                    LavaTrack track = searchResp.Tracks.ElementAt(0);
-                    await currentPlayer.PlayAsync(track);
-                    // Next track embed details
-                    EmbedBuilder embedTrack = new EmbedBuilder();
-                    embedTrack.Color = embedsColor;
-                    embedTrack.Title = "Now Playing...";
-                    embedTrack.AddField("Name", track.Title, true);
-                    embedTrack.AddField("Author", track.Author, false);
-                    embedTrack.AddField("Duration", track.Duration, true);
-                    embedTrack.ThumbnailUrl = await track.FetchArtworkAsync();
-                    await ReplyAsync(null, false, embedTrack.Build(), null, null, new MessageReference(Context.Message.Id));
-                }
+            try {
+                await lavaNode.JoinAsync(voiceState.VoiceChannel, Context.Channel as ITextChannel);
+            } catch (Exception exception) {
+                await ReplyAsync(exception.Message);
             }
         }
 
-        /*[Command("skip")]
+        [Command("leave")]
+        [Summary("Disconnect the bot to the current voice channel")]
+        public async Task leaveAsync() {
+            EmbedBuilder userVChannel = new EmbedBuilder();
+            userVChannel.Color = embedsColor;
+            // Lava client it's not present on any voice channel
+            if (!lavaNode.HasPlayer(Context.Guild)) {
+                userVChannel.Description = $"I'm not connected to any voice channel";
+                await ReplyAsync(null, false, userVChannel.Build(), null, null, new MessageReference(Context.Message.Id));
+                return;
+            }
+            // User it's not present on any voice channel
+            var voiceState = Context.User as IVoiceState;
+            if (voiceState?.VoiceChannel == null) {
+                userVChannel.Description = $"I don't accept orders from Narnia, please join a voice channel";
+                await ReplyAsync(null, false, userVChannel.Build(), null, null, new MessageReference(Context.Message.Id));
+                return;
+            }
+            try {
+                await lavaNode.LeaveAsync(voiceState.VoiceChannel);
+            } catch (Exception exception) {
+                await ReplyAsync(exception.Message);
+            }
+        }
+
+        [Command("play")]
+        [Alias("yt", "youtube")]
+        [RequireBotPermission(ChannelPermission.SendMessages)]
+        [Summary("Start playing a music or playlist from YouTube")]
+        public async Task playYouTubeAsync([Remainder][Summary("YouTube query")] String _ytQuery) {
+            // Lava client it's not present on any voice channel
+            if (!lavaNode.HasPlayer(Context.Guild)) {
+                EmbedBuilder botVChannel = new EmbedBuilder();
+                botVChannel.Color = embedsColor;
+                botVChannel.Description = $"I'm not connected to a voice channel";
+                await ReplyAsync(null, false, botVChannel.Build(), null, null, new MessageReference(Context.Message.Id));
+                return;
+            }
+            // Checking if query string its an URL
+            if (_ytQuery.StartsWith("https") || _ytQuery.StartsWith("http")) {
+                // Invalid URLs
+                if (!HttpUtility.ParseQueryString(new Uri(_ytQuery).Query).HasKeys()) { return; }
+                // Parse URL params.
+                NameValueCollection qString = HttpUtility.ParseQueryString(_ytQuery);
+                if (!String.IsNullOrWhiteSpace(qString.Get("ab_channel"))) {
+                    qString.Remove("ab_channel");
+                    _ytQuery = qString.ToString();
+                }
+            }
+            SearchResponse searchResp = await lavaNode.SearchYouTubeAsync(_ytQuery);
+            // Couldnt find anything for the query param given
+            if (searchResp.Status is SearchStatus.LoadFailed || searchResp.Status is SearchStatus.NoMatches) {
+                EmbedBuilder noMatches = new EmbedBuilder();
+                noMatches.Color = embedsColor;
+                noMatches.Description = $"I didn't find anything about `{ _ytQuery }` on YouTube but I can look it up in Narnia";
+                await ReplyAsync(null, false, noMatches.Build(), null, null, new MessageReference(Context.Message.Id));
+                return;
+            }
+            // Assign LavaPlayer to the current discord server
+            LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
+            // If LavaPlayer its active (playing)
+            if (currentPlayer.PlayerState is PlayerState.Playing || currentPlayer.PlayerState is PlayerState.Paused) {
+                if (!String.IsNullOrWhiteSpace(searchResp.Playlist.Name)) {
+                    foreach (var track in searchResp.Tracks) currentPlayer.Queue.Enqueue(track);
+                    // Enqueued track embed
+                    EmbedBuilder inQueue = new EmbedBuilder();
+                    inQueue.Color = embedsColor;
+                    inQueue.Description = $"Currently { searchResp.Tracks.Count } tracks in queue";
+                    await ReplyAsync(null, false, inQueue.Build());
+                } else {
+                    // With track name -> elemAt(0)
+                    LavaTrack track = searchResp.Tracks.ElementAt(0);
+                    currentPlayer.Queue.Enqueue(track);
+                    // Enqueued track embed
+                    EmbedBuilder enQueued = new EmbedBuilder();
+                    enQueued.Color = embedsColor;
+                    enQueued.Description = $"Enqueued: `{ track.Title }`";
+                    await ReplyAsync(null, false, enQueued.Build());
+                }
+            } else {
+                // When LavaPlayer its idle trigger a PlayAsync
+                LavaTrack track = searchResp.Tracks.ElementAt(0);
+                await currentPlayer.PlayAsync(track);
+                // Next track embed details
+                EmbedBuilder embedTrack = new EmbedBuilder();
+                embedTrack.Color = embedsColor;
+                embedTrack.Title = "Playing now...";
+                embedTrack.AddField("Name", track.Title, false);
+                embedTrack.AddField("Author", track.Author, true);
+                embedTrack.AddField("Duration", track.Duration, true);
+                embedTrack.ThumbnailUrl = await track.FetchArtworkAsync();
+                await ReplyAsync(null, false, embedTrack.Build(), null, null, new MessageReference(Context.Message.Id));
+            }
+        }
+
+        [Command("scplay")]
+        [Alias("sc", "soundcloud")]
+        [RequireBotPermission(ChannelPermission.SendMessages)]
+        [Summary("Start playing a music or playlist from SoundCloud")]
+        public async Task playSoundCloudAsync([Remainder][Summary("SoundCloud query")] String _ytQuery) {
+            // Lava client it's not present on any voice channel
+            if (!lavaNode.HasPlayer(Context.Guild)) {
+                EmbedBuilder botVChannel = new EmbedBuilder();
+                botVChannel.Color = embedsColor;
+                botVChannel.Description = $"I'm not connected to a voice channel";
+                await ReplyAsync(null, false, botVChannel.Build(), null, null, new MessageReference(Context.Message.Id));
+                return;
+            }
+            // Checking if query string its an URL
+            if (_ytQuery.StartsWith("https") || _ytQuery.StartsWith("http")) { return; }
+            SearchResponse searchResp = await lavaNode.SearchSoundCloudAsync(_ytQuery);
+            // Couldnt find anything for the query param given
+            if (searchResp.Status is SearchStatus.LoadFailed || searchResp.Status is SearchStatus.NoMatches) {
+                EmbedBuilder noMatches = new EmbedBuilder();
+                noMatches.Color = embedsColor;
+                noMatches.Description = $"I didn't find anything about `{ _ytQuery }` on SoundCloud but I can look it up in Narnia";
+                await ReplyAsync(null, false, noMatches.Build(), null, null, new MessageReference(Context.Message.Id));
+                return;
+            }
+            // Assign LavaPlayer to the current discord server
+            LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
+            // If LavaPlayer its active (playing)
+            if (currentPlayer.PlayerState is PlayerState.Playing || currentPlayer.PlayerState is PlayerState.Paused) {
+                if (!String.IsNullOrWhiteSpace(searchResp.Playlist.Name)) {
+                    foreach (var track in searchResp.Tracks) currentPlayer.Queue.Enqueue(track);
+                    // Enqueued track embed
+                    EmbedBuilder inQueue = new EmbedBuilder();
+                    inQueue.Color = embedsColor;
+                    inQueue.Description = $"Currently { searchResp.Tracks.Count } tracks in queue";
+                    await ReplyAsync(null, false, inQueue.Build());
+                } else {
+                    // With track name -> elemAt(0)
+                    LavaTrack track = searchResp.Tracks.ElementAt(0);
+                    currentPlayer.Queue.Enqueue(track);
+                    // Enqueued track embed
+                    EmbedBuilder enQueued = new EmbedBuilder();
+                    enQueued.Color = embedsColor;
+                    enQueued.Description = $"Enqueued: `{ track.Title }`";
+                    await ReplyAsync(null, false, enQueued.Build());
+                }
+            } else {
+                // When LavaPlayer its idle trigger a PlayAsync
+                LavaTrack track = searchResp.Tracks.ElementAt(0);
+                await currentPlayer.PlayAsync(track);
+                // Next track embed details
+                EmbedBuilder embedTrack = new EmbedBuilder();
+                embedTrack.Color = embedsColor;
+                embedTrack.Title = "Playing now...";
+                embedTrack.AddField("Name", track.Title, false);
+                embedTrack.AddField("Author", track.Author, true);
+                embedTrack.AddField("Duration", track.Duration, true);
+                embedTrack.ThumbnailUrl = await track.FetchArtworkAsync();
+                await ReplyAsync(null, false, embedTrack.Build(), null, null, new MessageReference(Context.Message.Id));
+            }
+        }
+
+        [Command("skip")]
+        [Alias("next")]
         [RequireBotPermission(ChannelPermission.SendMessages)]
         [Summary("Skip to next track in queue")]
         public async Task skipNextTrack() {
@@ -116,22 +225,22 @@ namespace DiscordDenver.Modules
             IVoiceState voiceState = Context.User as IVoiceState;
             if (voiceState.VoiceChannel is null || !lavaNode.HasPlayer(Context.Guild)) { return; }
             LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
-            // Current user in a different vchannel than bot
+            // User in a different vchannel than bot
             if (!voiceState.VoiceChannel.Equals(currentPlayer.VoiceChannel)) { return; }
             // No next track queued
             if (currentPlayer.Queue.Count.Equals(0)) { return; }
-            await currentPlayer.SkipAsync(TimeSpan.FromSeconds(2));
+            await currentPlayer.SkipAsync();
             // Next track embed details
             LavaTrack currenttrack = currentPlayer.Track;
             EmbedBuilder embedTrack = new EmbedBuilder();
             embedTrack.Color = embedsColor;
             embedTrack.Title = "Playing now...";
-            embedTrack.AddField("Name", currenttrack.Title, true);
-            embedTrack.AddField("Author", currenttrack.Author, false);
+            embedTrack.AddField("Name", currenttrack.Title, false);
+            embedTrack.AddField("Author", currenttrack.Author, true);
             embedTrack.AddField("Duration", currenttrack.Duration, true);
             embedTrack.ThumbnailUrl = await currenttrack.FetchArtworkAsync();
             await ReplyAsync(null, false, embedTrack.Build(), null, null, new MessageReference(Context.Message.Id));
-        }*/
+        }
 
         [Command("pause")]
         [Summary("Pause current discord player")]
@@ -140,7 +249,7 @@ namespace DiscordDenver.Modules
             IVoiceState voiceState = Context.User as IVoiceState;
             if (voiceState.VoiceChannel is null || !lavaNode.HasPlayer(Context.Guild)) { return; }
             LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
-            // Current user in a different vchannel than bot
+            // User in a different vchannel than bot
             if (!voiceState.VoiceChannel.Equals(currentPlayer.VoiceChannel)) { return; }
             // Player its already paused/stopped
             if (currentPlayer.PlayerState.Equals(PlayerState.Paused) || 
@@ -155,7 +264,7 @@ namespace DiscordDenver.Modules
             IVoiceState voiceState = Context.User as IVoiceState;
             if (voiceState.VoiceChannel is null || !lavaNode.HasPlayer(Context.Guild)) { return; }
             LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
-            // Current user in a different vchannel than bot
+            // User in a different vchannel than bot
             if (!voiceState.VoiceChannel.Equals(currentPlayer.VoiceChannel)) { return; }
             // Player its already paused/stopped
             if (currentPlayer.PlayerState.Equals(PlayerState.Playing)) { return; }
@@ -169,7 +278,7 @@ namespace DiscordDenver.Modules
             IVoiceState voiceState = Context.User as IVoiceState;
             if (voiceState.VoiceChannel is null || !lavaNode.HasPlayer(Context.Guild)) { return; }
             LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
-            // Current user in a different vchannel than bot
+            // User in a different vchannel than bot
             if (!voiceState.VoiceChannel.Equals(currentPlayer.VoiceChannel)) { return; }
             // Player its already stopped
             if (currentPlayer.PlayerState.Equals(PlayerState.Stopped)) { return; }
@@ -184,13 +293,13 @@ namespace DiscordDenver.Modules
             // User nor bot it's not present on any voice channel
             IVoiceState voiceState = Context.User as IVoiceState;
             if (voiceState.VoiceChannel is null || !lavaNode.HasPlayer(Context.Guild)) { return; }
-            // Current user in a different vchannel than bot
+            // User in a different vchannel than bot
             LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
             if (!voiceState.VoiceChannel.Equals(currentPlayer.VoiceChannel)) { return; }
             // Queue tracks list embed
             EmbedBuilder embedQueueTracks = new EmbedBuilder();
             embedQueueTracks.Color = embedsColor;
-            embedQueueTracks.Title = $"Tracks in queue: `{ currentPlayer.Queue.Count }`";
+            embedQueueTracks.Title = $"Queue: `{ currentPlayer.Queue.Count }` tracks";
             // Loop through all track in queue
             foreach (LavaTrack track in currentPlayer.Queue) 
                 embedQueueTracks.AddField(track.Title, track.Author, false);
@@ -205,14 +314,20 @@ namespace DiscordDenver.Modules
             EmbedBuilder embedLyrics = new EmbedBuilder();
             embedLyrics.Color = embedsColor;
             try {
-                if (!lavaNode.TryGetPlayer(Context.Guild, out var currentPlayer)) { return; }
+                // User nor bot it's not present on any voice channel
+                IVoiceState voiceState = Context.User as IVoiceState;
+                if (voiceState.VoiceChannel is null) { return; }
+                if (!lavaNode.TryGetPlayer(Context.Guild, out LavaPlayer currentPlayer)) { return; }
+                // User in a different vchannel than bot
+                if (!voiceState.VoiceChannel.Equals(currentPlayer.VoiceChannel)) { return; }
+                // Player its not playing
                 if (!currentPlayer.PlayerState.Equals(PlayerState.Playing)) { return; }
                 String lyrics = await currentPlayer.Track.FetchLyricsFromGeniusAsync();
                 if (String.IsNullOrWhiteSpace(lyrics)) { return; }
                 String[] splitLyrics = lyrics.Split('\n');
                 StringBuilder stringBuilder = new StringBuilder();
                 foreach (var line in splitLyrics) {
-                    if (Range.Contains(stringBuilder.Length)) {
+                    if (enumRange.Contains(stringBuilder.Length)) {
                         embedLyrics.Title = currentPlayer.Track.Title;
                         embedLyrics.Description = $"```{stringBuilder}```";
                         await ReplyAsync(null, false, embedLyrics.Build(), null, null, new MessageReference(Context.Message.Id));
