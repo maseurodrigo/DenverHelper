@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # openjdk:13
-FROM openjdk:18-ea-13-oracle
+FROM openjdk:18-ea-13-jdk-slim-buster
 WORKDIR /app/Lavalink
 
 # Run as non-root user
