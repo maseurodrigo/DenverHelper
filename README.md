@@ -12,7 +12,7 @@
 | **dmrole** |  | Send a DM for users with a given role assigned |
 | **dmall** |  | Send a DM to all server members |
 | **random** | **rand** | Generate random data for the information provided - **(options splitted by ',' or '/')** |
-| **play** | **youtube** | Start playing a music or playlist from YouTube |
+| **play** | **youtube** | Start playing a music from YouTube |
 | **scplay** | **soundcloud** | Start playing a music or playlist from SoundCloud |
 | **skip** | **next** | Skip to next track in queue |
 | **pause** |  | Pause current discord player |

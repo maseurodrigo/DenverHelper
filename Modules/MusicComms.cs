@@ -67,7 +67,7 @@ namespace DiscordDenver.Modules
         [Command("play")]
         [Alias("yt", "youtube")]
         [RequireBotPermission(ChannelPermission.SendMessages)]
-        [Summary("Start playing a music or playlist from YouTube")]
+        [Summary("Start playing a music from YouTube")]
         public async Task playYouTubeAsync([Remainder][Summary("YouTube query")] String _ytQuery) {
             IVoiceState voiceState = Context.User as IVoiceState;
             // Lava client it's not present on any voice channel
