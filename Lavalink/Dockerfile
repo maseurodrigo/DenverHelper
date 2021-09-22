@@ -1,9 +1,13 @@
 # syntax=docker/dockerfile:1
-# lavalink:dev (zulu-openjdk:13)
-FROM fredboat/lavalink:dev
-WORKDIR /app
+# openjdk:13
+FROM openjdk:18-ea-13-oracle
+WORKDIR /app/Lavalink
 
-# Copy everything else and build
+# Run as non-root user
+RUN groupadd -g 322 lavalink && useradd -r -u 322 -g lavalink lavalink
+USER lavalink
+
+# Copy Lavalink.jar and application.yml
 COPY ./Lavalink/Lavalink.jar Lavalink.jar
 COPY ./Lavalink/application.yml application.yml
 

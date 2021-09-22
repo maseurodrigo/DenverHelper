@@ -87,15 +87,25 @@ namespace DiscordDenver.Modules
             LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
             // User in a different vchannel than bot
             if (voiceState?.VoiceChannel is null || !voiceState.VoiceChannel.Equals(currentPlayer.VoiceChannel)) { return; }
+            // Remove white spaces from query
+            _ytQuery = _ytQuery.Trim();
             // Checking if query string its an URL
             if (_ytQuery.StartsWith("https") || _ytQuery.StartsWith("http")) {
                 // Invalid URLs
                 if (!HttpUtility.ParseQueryString(new Uri(_ytQuery).Query).HasKeys()) { return; }
                 // Parse URL params.
                 NameValueCollection qString = HttpUtility.ParseQueryString(_ytQuery);
-                if (!String.IsNullOrWhiteSpace(qString.Get("ab_channel"))) {
-                    qString.Remove("ab_channel");
-                    _ytQuery = qString.ToString();
+                if (String.IsNullOrWhiteSpace(qString.Get("list"))) {
+                    if (!String.IsNullOrWhiteSpace(qString.Get("ab_channel"))) {
+                        qString.Remove("ab_channel");
+                        _ytQuery = qString.ToString();
+                    }
+                } else {
+                    EmbedBuilder noPlaylists = new EmbedBuilder();
+                    noPlaylists.Color = embedsColor;
+                    noPlaylists.Description = "I'm not accepting playlists at the moment";
+                    await ReplyAsync(null, false, noPlaylists.Build(), null, null, new MessageReference(Context.Message.Id));
+                    return;
                 }
             }
             SearchResponse searchResp = await lavaNode.SearchYouTubeAsync(_ytQuery);
@@ -109,6 +119,7 @@ namespace DiscordDenver.Modules
             }
             // If LavaPlayer its active (Playing/Paused)
             if (currentPlayer.PlayerState is PlayerState.Playing || currentPlayer.PlayerState is PlayerState.Paused) {
+                // If its a playlist
                 if (!String.IsNullOrWhiteSpace(searchResp.Playlist.Name)) {
                     foreach (var track in searchResp.Tracks) currentPlayer.Queue.Enqueue(track);
                     // Enqueued track embed
@@ -117,7 +128,6 @@ namespace DiscordDenver.Modules
                     inQueue.Description = $"Currently { searchResp.Tracks.Count } tracks in queue";
                     await ReplyAsync(null, false, inQueue.Build());
                 } else {
-                    // With track name -> elemAt(0)
                     LavaTrack track = searchResp.Tracks.ElementAt(0);
                     currentPlayer.Queue.Enqueue(track);
                     // Enqueued track embed

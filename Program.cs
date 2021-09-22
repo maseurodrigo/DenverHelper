@@ -42,7 +42,6 @@ namespace DiscordDenver
                         client.Port = 2333;
                         client.Hostname = "host.docker.internal";
                         client.SelfDeaf = true;
-                        client.EnableResume = true;
                     }).AddSingleton<CommHandler>()
                     .AddSingleton<BotService>()
                     .AddSingleton(botData);
