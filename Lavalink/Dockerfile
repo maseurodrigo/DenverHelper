@@ -1,12 +1,6 @@
 # syntax=docker/dockerfile:1
-# openjdk:13
-FROM azul/zulu-openjdk:13
-
-# Run as non-root user
-RUN groupadd -g 322 lavalink && \
-    useradd -r -u 322 -g lavalink lavalink
-USER lavalink
-
+# lavalink:dev (zulu-openjdk:13)
+FROM fredboat/lavalink:dev
 WORKDIR /app
 
 # Copy everything else and build
@@ -16,4 +10,4 @@ COPY ./Lavalink/application.yml application.yml
 # Internal port expose
 EXPOSE 2333
 
-CMD ["java", "-jar", "Lavalink.jar"]
+ENTRYPOINT ["java", "-Djdk.tls.client.protocols=TLSv1.1,TLSv1.2", "-Xmx4G", "-jar", "Lavalink.jar"]

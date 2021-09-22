@@ -26,8 +26,9 @@ namespace DiscordDenver
             });
             ServiceCollection discordService = new ServiceCollection();
             CommandServiceConfig serviceConfig = new CommandServiceConfig() {
-                CaseSensitiveCommands = false,
                 DefaultRunMode = RunMode.Async,
+                CaseSensitiveCommands = false,
+                IgnoreExtraArgs = true,
                 LogLevel = LogSeverity.Info
             };
             try {

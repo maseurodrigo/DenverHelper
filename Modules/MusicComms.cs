@@ -58,8 +58,10 @@ namespace DiscordDenver.Modules
             LavaPlayer currentPlayer = lavaNode.GetPlayer(Context.Guild);
             // User in a different vchannel than bot
             if (!voiceState.VoiceChannel.Equals(currentPlayer.VoiceChannel)) { return; }
-            try { await lavaNode.LeaveAsync(voiceState.VoiceChannel); } 
-            catch (Exception exception) { await ReplyAsync(exception.Message); }
+            try {
+                await Context.Message.AddReactionAsync(new Emoji("👋")); // Leave emoji reaction
+                await lavaNode.LeaveAsync(voiceState.VoiceChannel);
+            } catch (Exception exception) { await ReplyAsync(exception.Message); }
         }
 
         [Command("play")]
@@ -232,6 +234,7 @@ namespace DiscordDenver.Modules
             embedTrack.AddField("Author", currenttrack.Author, true);
             embedTrack.AddField("Duration", currenttrack.Duration, true);
             embedTrack.ThumbnailUrl = await currenttrack.FetchArtworkAsync();
+            await Context.Message.AddReactionAsync(new Emoji("⏭️")); // Skip emoji reaction
             await ReplyAsync(null, false, embedTrack.Build(), null, null, new MessageReference(Context.Message.Id));
         }
 
