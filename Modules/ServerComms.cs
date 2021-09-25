@@ -29,7 +29,7 @@ namespace DenverHelper.Modules
             await Context.Channel.TriggerTypingAsync();
             MySQLConnect conn = new MySQLConnect(botData);
             int totalComms = await MySQLComms.getTotalComms(conn, Context.Guild.Id);
-            replyEmbed.Description = $"There are { totalComms } commands for this server";
+            replyEmbed.Description = $"There are `{ totalComms }` commands for this server";
             // Close local connection
             await conn.closeConnection();
             // Reply with the embed

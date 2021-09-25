@@ -21,7 +21,7 @@ namespace DenverHelper.Modules
         [RequireBotPermission(ChannelPermission.SendMessages)]
         public async Task getHelp() {
             // List of all available commands
-            List<CommandInfo> allCommands = commandService.Commands.ToList();
+            List<CommandInfo> allCommands = commandService.Commands.OrderBy(comm => comm.Name).ToList();
             EmbedBuilder embedBuilder = new EmbedBuilder();
             EmbedBuilder embedAdminBuilder = new EmbedBuilder();
             // Instance context user data
@@ -29,19 +29,19 @@ namespace DenverHelper.Modules
             GuildPermissions userGuildPerms = contextUser.GuildPermissions;
             // List of commands to exclude from help list
             Dictionary<String, bool> commsToExclude = new Dictionary<String, bool>() {
-                { "help", false }, { "addkey", true }, { "delkey", true }
+                { "conn", false }, { "help", false }, { "addkey", true }, { "delkey", true }
             };
             foreach (CommandInfo command in allCommands) {
                 if (commsToExclude.ContainsKey(command.Name)) {
                     if (commsToExclude[command.Name]) {
                         // Get the command Summary attribute information
-                        String embedFieldText = command.Summary ?? "No description available\n";
-                        embedAdminBuilder.AddField(CultureInfo.CurrentCulture.TextInfo.ToTitleCase(command.Name.ToLower()), embedFieldText);
+                        String embedFieldText = command.Summary ?? "No description available";
+                        embedAdminBuilder.AddField($"`{ command.Name.ToLower() }`", embedFieldText);
                     }
                 } else {
                     // Get the command Summary attribute information
-                    String embedFieldText = command.Summary ?? "No description available\n";
-                    embedBuilder.AddField(CultureInfo.CurrentCulture.TextInfo.ToTitleCase(command.Name.ToLower()), embedFieldText);
+                    String embedFieldText = command.Summary ?? "No description available";
+                    embedBuilder.AddField($"`{ command.Name.ToLower() }`", embedFieldText);
                 }
             }
             // Reply with the embed
@@ -150,7 +150,7 @@ namespace DenverHelper.Modules
                 // Get all parameters to randomize
                 if (_message.IndexOfAny(splitOpts) != -1) 
                     arrayData = _message.Split(_message[_message.IndexOfAny(splitOpts)]);
-                replyEmbed.Description = $"{ arrayData[new Random().Next(0, arrayData.Length)].Trim() } was the chosen!";
+                replyEmbed.Description = $"`{ arrayData[new Random().Next(0, arrayData.Length)].Trim() }` was the chosen!";
             } catch (ArgumentOutOfRangeException) {
                 replyEmbed.Description = "I'm sorry, but an error occurred during the random operation";
             }

@@ -40,7 +40,7 @@ namespace DenverHelper.Modules
                 }
             }
             // Reply with the embed
-            replyEmbed.Description = $"{ dmsSuccess } DM(s) were sent and { dmsError } were not!";
+            replyEmbed.Description = $"`{ dmsSuccess }` DM(s) were sent and `{ dmsError }` were not!";
             await ReplyAsync(null, false, replyEmbed.Build(), null, null, new MessageReference(Context.Message.Id));
         }
 
@@ -76,8 +76,8 @@ namespace DenverHelper.Modules
                 }
             }
             // Reply with the embed
-            replyEmbed.AddField($"DMs sent", dmsSuccess, true);
-            replyEmbed.AddField($"Unsent DMs", dmsError, true);
+            replyEmbed.AddField($"DMs sent", $"`{ dmsSuccess }`", true);
+            replyEmbed.AddField($"Unsent DMs", $"`{ dmsError }`", true);
             await ReplyAsync(null, false, replyEmbed.Build(), null, null, new MessageReference(Context.Message.Id));
         }
     }

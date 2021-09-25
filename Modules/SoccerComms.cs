@@ -330,7 +330,7 @@ namespace DenverHelper.Modules
                             JToken playerAge = ((JObject)player)["age"];
                             JToken playerHeight = ((JObject)player)["height"];
                             JToken playerWeight = ((JObject)player)["weight"];
-                            allPlayers.AppendLine($"{ (String)playerID }: **{ (String)playerName }** ({ (String)playerNation })");
+                            allPlayers.AppendLine($"`{ (String)playerID }`: **{ (String)playerName }** ({ (String)playerNation })");
                             listPlayers.Add((int)playerID, new PlayerData((String)playerName, (String)playerPosition, (String)playerNation,
                                 (int)playerAge, (String)playerHeight, (String)playerWeight));
                         }
