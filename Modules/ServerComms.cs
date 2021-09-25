@@ -4,16 +4,17 @@ using System.Globalization;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using DiscordDenver.Data;
-using DiscordDenver.Data.MySQL;
+using DenverHelper.Data;
+using DenverHelper.Data.MySQL;
 
-namespace DiscordDenver.Modules
+namespace DenverHelper.Modules
 {
     [Summary("Server Discord Commands")]
     public class ServerComms : ModuleBase<SocketCommandContext>
     {
         // Getting all services through constructor param with AddSingleton()
         private BotData botData { get; }
+        private static readonly Color embedsColor = new Color(149, 117, 205);
         private ServerComms(BotData _BotData) => this.botData = _BotData;
 
         [Command("comms")]
@@ -23,7 +24,7 @@ namespace DiscordDenver.Modules
         public async Task getTotalServerComms() {
             // Embed layout reply
             EmbedBuilder replyEmbed = new EmbedBuilder();
-            replyEmbed.WithColor(new Color(239, 83, 80));
+            replyEmbed.WithColor(embedsColor);
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
             MySQLConnect conn = new MySQLConnect(botData);
@@ -42,7 +43,7 @@ namespace DiscordDenver.Modules
         public async Task getDataComm([Summary("Command")] String _comm) {
             // Embed layout reply
             EmbedBuilder replyEmbed = new EmbedBuilder();
-            replyEmbed.WithColor(new Color(239, 83, 80));
+            replyEmbed.WithColor(embedsColor);
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
             MySQLConnect conn = new MySQLConnect(botData);
@@ -71,7 +72,7 @@ namespace DiscordDenver.Modules
         public async Task setNewComm([Summary("Command")] String _comm, [Remainder][Summary("Command data")] String _commData) {
             // Embed layout reply
             EmbedBuilder replyEmbed = new EmbedBuilder();
-            replyEmbed.WithColor(new Color(239, 83, 80));
+            replyEmbed.WithColor(embedsColor);
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
             MySQLConnect conn = new MySQLConnect(botData);
@@ -96,7 +97,7 @@ namespace DiscordDenver.Modules
         public async Task removeComm([Summary("Command")] String _comm) {
             // Embed layout reply
             EmbedBuilder replyEmbed = new EmbedBuilder();
-            replyEmbed.WithColor(new Color(239, 83, 80));
+            replyEmbed.WithColor(embedsColor);
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
             MySQLConnect conn = new MySQLConnect(botData);

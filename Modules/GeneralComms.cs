@@ -8,7 +8,7 @@ using Discord.Commands;
 using Discord.Net;
 using Discord.WebSocket;
 
-namespace DiscordDenver.Modules
+namespace DenverHelper.Modules
 {
     [Summary("General Discord Commands")]
     public class GeneralComms : ModuleBase<SocketCommandContext>
@@ -29,7 +29,7 @@ namespace DiscordDenver.Modules
             GuildPermissions userGuildPerms = contextUser.GuildPermissions;
             // List of commands to exclude from help list
             Dictionary<String, bool> commsToExclude = new Dictionary<String, bool>() {
-                { "help", false }, { "lavanode", false }, { "addkey", true }, { "delkey", true }
+                { "help", false }, { "addkey", true }, { "delkey", true }
             };
             foreach (CommandInfo command in allCommands) {
                 if (commsToExclude.ContainsKey(command.Name)) {

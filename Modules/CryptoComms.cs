@@ -4,13 +4,13 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.Addons.Interactive;
-using DiscordDenver.Data;
-using DiscordDenver.Data.Functions;
-using DiscordDenver.Data.MySQL;
+using DenverHelper.Data;
+using DenverHelper.Data.Functions;
+using DenverHelper.Data.MySQL;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace DiscordDenver.Modules
+namespace DenverHelper.Modules
 {
     [Summary("Crypto Discord Commands")]
     public class CryptoComms : InteractiveBase

@@ -7,19 +7,20 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.Addons.Interactive;
-using DiscordDenver.Data;
-using DiscordDenver.Data.Functions;
-using DiscordDenver.Data.MySQL;
+using DenverHelper.Data;
+using DenverHelper.Data.Functions;
+using DenverHelper.Data.MySQL;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace DiscordDenver.Modules
+namespace DenverHelper.Modules
 {
     [Summary("Soccer Discord Commands")]
     public class SoccerComms : InteractiveBase
     {
         // Getting all services through constructor param with AddSingleton()
         private BotData botData { get; }
+        private static readonly Color embedsColor = new Color(139, 195, 74);
         private SoccerComms(BotData _BotData) => this.botData = _BotData;
 
         [Command("team")]
@@ -29,7 +30,7 @@ namespace DiscordDenver.Modules
         public async Task getTeamMembers([Remainder][Summary("Team name")] String _teamName) {
             // Embed layout reply
             var replyEmbed = new EmbedBuilder();
-            replyEmbed.WithColor(new Color(139, 195, 74));
+            replyEmbed.WithColor(embedsColor);
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
             MySQLConnect conn = new MySQLConnect(botData);
@@ -97,7 +98,7 @@ namespace DiscordDenver.Modules
             var strBuilder = new StringBuilder();
             // Embed layout reply
             var replyEmbed = new EmbedBuilder();
-            replyEmbed.WithColor(new Color(139, 195, 74));
+            replyEmbed.WithColor(embedsColor);
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
             MySQLConnect conn = new MySQLConnect(botData);
@@ -208,7 +209,7 @@ namespace DiscordDenver.Modules
             var strBuilder = new StringBuilder();
             // Embed layout reply
             var replyEmbed = new EmbedBuilder();
-            replyEmbed.WithColor(new Color(139, 195, 74));
+            replyEmbed.WithColor(embedsColor);
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
             MySQLConnect conn = new MySQLConnect(botData);
@@ -299,8 +300,7 @@ namespace DiscordDenver.Modules
         public async Task getPlayerData([Remainder][Summary("Player name")] String _player) {
             // Embed layout reply
             var replyEmbed = new EmbedBuilder();
-            Color embedColor = new Color(139, 195, 74);
-            replyEmbed.WithColor(embedColor);
+            replyEmbed.WithColor(embedsColor);
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
             MySQLConnect conn = new MySQLConnect(botData);
@@ -311,7 +311,7 @@ namespace DiscordDenver.Modules
                 try {
                     // Embed layout reply
                     var listPlayersEmbed = new EmbedBuilder();
-                    listPlayersEmbed.WithColor(embedColor);
+                    listPlayersEmbed.WithColor(embedsColor);
                     Dictionary<int, PlayerData> listPlayers = new Dictionary<int, PlayerData>();
                     // Check if the results are too many 
                     JToken totalResults = ((JObject)tmpPlayerData)["api"]["results"];

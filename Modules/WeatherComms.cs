@@ -7,11 +7,11 @@ using Discord;
 using Discord.Commands;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using DiscordDenver.Data;
-using DiscordDenver.Data.Functions;
-using DiscordDenver.Data.MySQL;
+using DenverHelper.Data;
+using DenverHelper.Data.Functions;
+using DenverHelper.Data.MySQL;
 
-namespace DiscordDenver.Modules
+namespace DenverHelper.Modules
 {
     [Summary("Weather Discord Commands")]
     public class WeatherComms : ModuleBase<SocketCommandContext>

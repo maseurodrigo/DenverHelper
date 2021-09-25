@@ -1,7 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json;
 
-namespace DiscordDenver.Data
+namespace DenverHelper.Data
 {
     public class BotData {
         [JsonProperty("DiscordBotPrefix")] public String BotPrefix { get; set; }

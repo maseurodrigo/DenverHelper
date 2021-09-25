@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using RestSharp;
 
-namespace DiscordDenver.Data.Functions
+namespace DenverHelper.Data.Functions
 {
     public class APIsFunctions 
     {

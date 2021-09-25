@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Copy csproj and restore as distinct layers
 COPY *.csproj ./
-RUN dotnet restore DiscordDenver.csproj
+RUN dotnet restore DenverHelper.csproj
 
 # Copy everything else and build
 COPY . ./
@@ -16,4 +16,4 @@ FROM mcr.microsoft.com/dotnet/runtime:5.0-buster-slim AS runtime
 WORKDIR /app
 COPY --from=build-env /app/out .
 
-ENTRYPOINT ["dotnet", "DiscordDenver.dll"]
+ENTRYPOINT ["dotnet", "DenverHelper.dll"]

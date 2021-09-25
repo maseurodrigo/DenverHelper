@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
-using DiscordDenver.Data;
+using DenverHelper.Data;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
-using Victoria;
-using Victoria.EventArgs;
 
-namespace DiscordDenver.Services
+namespace DenverHelper.Services
 {
     public class CommHandler
     {
@@ -17,36 +15,25 @@ namespace DiscordDenver.Services
         public static CommandService discordCommands { get; set; }
         public static InteractiveService discordInteractive { get; set; }
         public static IServiceProvider discordService { get; set; }
-        public static LavaNode lavaNode { get; set; }
         public static BotData botData { get; set; }
 
         public CommHandler(DiscordSocketClient _discordClient, CommandService _discordCommands, InteractiveService _discordInteractive,
-            IServiceProvider _discordService, LavaNode _lavaNode, BotData _botData) {
+            IServiceProvider _discordService, BotData _botData) {
             discordClient = _discordClient;
             discordCommands = _discordCommands;
             discordInteractive = _discordInteractive;
             discordService = _discordService;
-            lavaNode = _lavaNode;
             botData = _botData;
-            discordClient.Ready += client_Ready;
+            // DiscordSocketClient functions
             discordClient.MessageReceived += client_NewCommandReceived;
-            discordClient.UserVoiceStateUpdated += client_UserVoiceStateUpdated;
             discordClient.Log += botLogEvents;
-            lavaNode.OnTrackEnded += lavaClient_OnTrackEnded;
-            lavaNode.OnTrackStuck += lavaClient_OnTrackStuck;
-            lavaNode.OnTrackException += lavaClient_OnTrackException;
-        }
-
-        private async Task client_Ready() {
-            // When discordClient its ready connect victoria client
-            if (!lavaNode.IsConnected) await lavaNode.ConnectAsync();
         }
 
         private async Task client_NewCommandReceived(SocketMessage message) {
             // Block commands through DMs
-            if (message.Channel is SocketDMChannel) return;
+            if (message.Channel is SocketDMChannel) { return; }
             // Block messages from verified bots
-            if (message.Author.IsBot) return;
+            if (message.Author.IsBot) { return; }
             else {
                 int argPos = 0;
                 SocketUserMessage discMessage = message as SocketUserMessage;
@@ -58,67 +45,10 @@ namespace DiscordDenver.Services
             }
         }
 
-        private async Task client_UserVoiceStateUpdated(SocketUser arg1, SocketVoiceState arg2, SocketVoiceState arg3) {
-            try {
-                // LavaNode leaves vchannel when last user leaves that specific channel
-                if (lavaNode.IsConnected && arg2.VoiceChannel.Users.Count.Equals(1)
-                    && !arg1.Id.Equals(discordClient.CurrentUser.Id))
-                    await lavaNode.LeaveAsync(lavaNode.GetPlayer(arg2.VoiceChannel.Guild).VoiceChannel);
-            } catch (NullReferenceException excep) {
-                Console.WriteLine(excep.Message);
-                await Task.CompletedTask;
-            }
-        }
-
         private async Task botLogEvents(LogMessage arg) {
-            Console.WriteLine(arg.ToString());
-            await Task.CompletedTask;
-        }
-
-        private async Task lavaClient_OnTrackEnded(TrackEndedEventArgs arg) {
-            LavaPlayer player = arg.Player;
-            // Queue completed
-            if (!player.Queue.TryDequeue(out var queueable)) { return; }
-            // Next item in queue is not a track
-            if (!(queueable is LavaTrack track)) {
-                await player.TextChannel.SendMessageAsync($"`{ queueable.Title }` is not a track. Skipping it...");
-                await player.SkipAsync();
-                return;
-            }
-            await arg.Player.PlayAsync(track);
-            // Next track embed details
-            EmbedBuilder embedTrack = new EmbedBuilder();
-            embedTrack.Color = new Color(244, 67, 54);
-            embedTrack.Title = "Playing now...";
-            embedTrack.AddField("Name", track.Title, false);
-            embedTrack.AddField("Author", track.Author, true);
-            embedTrack.AddField("Duration", track.Duration, true);
-            embedTrack.ThumbnailUrl = await track.FetchArtworkAsync();
-            await arg.Player.TextChannel.SendMessageAsync(null, false, embedTrack.Build());
-        }
-
-        private async Task lavaClient_OnTrackStuck(TrackStuckEventArgs arg) {
-            try {
-                // Skip current track when its stucked
-                await arg.Player.SkipAsync();
-            } catch (Exception excep) {
-                Console.WriteLine(excep.Message);
-            } finally {
-                // Re-added track to queue after throwing an exception
-                arg.Player.Queue.Enqueue(arg.Track);
-            }
-        }
-
-        private async Task lavaClient_OnTrackException(TrackExceptionEventArgs arg) {
-            try {
-                // Skip current track when some exception has been thrown
-                await arg.Player.SkipAsync();
-            } catch (Exception excep) {
-                Console.WriteLine(excep.Message);
-            } finally {
-                // Re-added track to queue after throwing an exception
-                arg.Player.Queue.Enqueue(arg.Track);
-            }
+            await Task.Factory.StartNew(() => {
+                Console.WriteLine(arg.ToString());
+            });
         }
     }
 }

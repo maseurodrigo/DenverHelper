@@ -7,11 +7,13 @@ using Discord.Net;
 using Discord.WebSocket;
 using Discord.Addons.Interactive;
 
-namespace DiscordDenver.Modules
+namespace DenverHelper.Modules
 {
     [Summary("DMs Discord Commands")]
     public class DMsComms : InteractiveBase
     {
+        private static readonly Color embedsColor = new Color(220, 231, 117);
+
         [Command("dmrole")]
         [RequireUserPermission(GuildPermission.ManageGuild)]
         [RequireBotPermission(ChannelPermission.SendMessages)]
@@ -19,7 +21,7 @@ namespace DiscordDenver.Modules
         public async Task dmRole(IRole _role, [Remainder][Summary("DM message")] String _message) {
             // Embed layout reply
             EmbedBuilder replyEmbed = new EmbedBuilder();
-            replyEmbed.WithColor(new Color(220, 231, 117));
+            replyEmbed.WithColor(embedsColor);
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
             int dmsSuccess = 0, dmsError = 0;
@@ -48,15 +50,14 @@ namespace DiscordDenver.Modules
         [Summary("Send a private message to all server members")]
         public async Task dmAll([Remainder][Summary("DM message")] String _message) {
             // Embed layout reply
-            Color embedColor = new Color(220, 231, 117);
             EmbedBuilder replyEmbed = new EmbedBuilder();
-            replyEmbed.WithColor(embedColor);
+            replyEmbed.WithColor(embedsColor);
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
             // Alert for servers with large number of users
             if (Context.Guild.Users.Count >= 100) {
                 EmbedBuilder usersEmbed = new EmbedBuilder();
-                usersEmbed.WithColor(embedColor);
+                usersEmbed.WithColor(embedsColor);
                 usersEmbed.Description = "This operation will take some time, when it's finished I'll post the results here";
                 await ReplyAsync(null, false, usersEmbed.Build());
             }

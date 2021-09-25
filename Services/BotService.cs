@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Reflection;
 using System.Threading.Tasks;
-using DiscordDenver.Data;
+using DenverHelper.Data;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
-namespace DiscordDenver.Services
+namespace DenverHelper.Services
 {
     public class BotService
     {
@@ -32,13 +32,6 @@ namespace DiscordDenver.Services
             await discordClient.SetStatusAsync(UserStatus.Online);
             // Listening status
             await discordClient.SetGameAsync($"{ botData.BotPrefix }help", null, ActivityType.Listening);
-            return discordClient.ConnectionState;
-        }
-
-        public async Task<ConnectionState> LogoutAsync() {
-            // Disconnection bot from the discord server
-            await discordClient.StopAsync();
-            await discordClient.LogoutAsync();
             return discordClient.ConnectionState;
         }
     }

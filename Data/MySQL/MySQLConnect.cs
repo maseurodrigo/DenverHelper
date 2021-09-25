@@ -4,7 +4,7 @@ using System.Data;
 using System.Threading.Tasks;
 using MySqlConnector;
 
-namespace DiscordDenver.Data.MySQL
+namespace DenverHelper.Data.MySQL
 {
     public class MySQLConnect 
     {

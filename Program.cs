@@ -5,13 +5,12 @@ using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
-using DiscordDenver.Data;
-using DiscordDenver.Services;
+using DenverHelper.Data;
+using DenverHelper.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using Victoria;
 
-namespace DiscordDenver
+namespace DenverHelper
 {
     class Program
     {
@@ -21,8 +20,7 @@ namespace DiscordDenver
             // Discord client configurations
             DiscordSocketClient discordClient = new DiscordSocketClient(new DiscordSocketConfig() {
                 AlwaysDownloadUsers = true,
-                LogLevel = LogSeverity.Info,
-                MessageCacheSize = 500
+                LogLevel = LogSeverity.Info
             });
             ServiceCollection discordService = new ServiceCollection();
             CommandServiceConfig serviceConfig = new CommandServiceConfig() {
@@ -38,13 +36,9 @@ namespace DiscordDenver
                     .AddSingleton(discordClient)
                     .AddSingleton(new CommandService(serviceConfig))
                     .AddSingleton(new InteractiveService(discordClient))
-                    .AddLavaNode(client => {
-                        client.Port = 2333;
-                        client.Hostname = "host.docker.internal";
-                        client.SelfDeaf = true;
-                    }).AddSingleton<CommHandler>()
                     .AddSingleton<BotService>()
-                    .AddSingleton(botData);
+                    .AddSingleton(botData)
+                    .AddSingleton<CommHandler>();
             } catch (FileNotFoundException excep) {
                 Console.WriteLine(excep.Message);
             }

@@ -2,10 +2,10 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using DiscordDenver.Data;
-using DiscordDenver.Data.MySQL;
+using DenverHelper.Data;
+using DenverHelper.Data.MySQL;
 
-namespace DiscordDenver.Modules
+namespace DenverHelper.Modules
 {
     [Summary("API Key Discord Commands")]
     public class APIKeyComms : ModuleBase<SocketCommandContext>
