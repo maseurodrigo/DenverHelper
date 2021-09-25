@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using Discord.Addons.Interactive;
 using DenverHelper.Data;
 using DenverHelper.Data.Functions;
@@ -24,9 +25,9 @@ namespace DenverHelper.Modules
         [Summary("Get updated data related to the price of the given cryptocurrency")]
         public async Task getCryptoPrices([Remainder][Summary("Crypto coin")] String _coin) {
             // Initialize empty string builder for reply
-            var strBuilder = new StringBuilder();
+            StringBuilder strBuilder = new StringBuilder();
             // Embed layout reply
-            var replyEmbed = new EmbedBuilder();
+            EmbedBuilder replyEmbed = new EmbedBuilder();
             replyEmbed.WithColor(new Color(33, 150, 243));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -35,17 +36,17 @@ namespace DenverHelper.Modules
                 try {
                     // Get JSON data of the given crypto name from API
                     String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
-                    object jsonData = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getCryptoData(APIKey, _coin.Trim().ToLower()));
+                    JObject jsonData = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getCryptoData(APIKey, _coin.Trim().ToLower()));
                     // Crypto token object
-                    JToken token = ((JObject)jsonData)["symbol"];
+                    JToken token = jsonData["symbol"];
                     if (token.Type == JTokenType.Null || token.Type == JTokenType.Undefined) {
                         replyEmbed.Description = "I think this doesn't match any cryptocurrency name...";
                     } else {
                         // Store crypto data (name, price, change on 24h and 7d)
-                        JToken fullName = ((JObject)jsonData)["name"];
-                        JToken currentPrice = ((JObject)jsonData)["market_data"]["current_price"]["usd"];
-                        JToken last24Hours = ((JObject)jsonData)["market_data"]["price_change_percentage_24h"];
-                        JToken last7Days = ((JObject)jsonData)["market_data"]["price_change_percentage_7d"];
+                        JToken fullName = jsonData["name"];
+                        JToken currentPrice = jsonData["market_data"]["current_price"]["usd"];
+                        JToken last24Hours = jsonData["market_data"]["price_change_percentage_24h"];
+                        JToken last7Days = jsonData["market_data"]["price_change_percentage_7d"];
                         // Build out the reply
                         replyEmbed.Title = $"Price of { (String)fullName }";
                         strBuilder.AppendLine($"💵{ new String(' ', 3) }Current Price: **{ Convert.ToDouble(currentPrice.ToString()).ToString("0.00") } $**");
@@ -78,9 +79,9 @@ namespace DenverHelper.Modules
         [Summary("Get the value in the given cryptocurrency for the indicated dollar value")]
         public async Task convCryptoPrice([Remainder][Summary("Crypto coin")] String _coin) {
             // Initialize empty string builder for reply
-            var strBuilder = new StringBuilder();
+            StringBuilder strBuilder = new StringBuilder();
             // Embed layout reply
-            var replyEmbed = new EmbedBuilder();
+            EmbedBuilder replyEmbed = new EmbedBuilder();
             replyEmbed.WithColor(new Color(33, 150, 243));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -90,7 +91,7 @@ namespace DenverHelper.Modules
                     // Waiting for an input of a valid numeric value
                     await ReplyAsync("Amount of dollars ?");
                     int dollars;
-                    var response = await NextMessageAsync(true, true, TimeSpan.FromSeconds(10));
+                    SocketMessage response = await NextMessageAsync(true, true, TimeSpan.FromSeconds(10));
                     if (response != null) {
                         if (int.TryParse(response.Content.Trim(), out dollars)) {
                             // Valid emoji reaction
@@ -99,15 +100,15 @@ namespace DenverHelper.Modules
                             await Context.Channel.TriggerTypingAsync();
                             // Get JSON data of the given crypto name from API
                             String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
-                            object jsonData = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getCryptoData(APIKey, _coin));
+                            JObject jsonData = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getCryptoData(APIKey, _coin));
                             // Crypto token object
-                            JToken token = ((JObject)jsonData)["symbol"];
+                            JToken token = jsonData["symbol"];
                             if (token.Type == JTokenType.Null || token.Type == JTokenType.Undefined) {
                                 replyEmbed.Description = "I think this doesn't match any cryptocurrency name...";
                             } else {
                                 // Store crypto data (name, price)
-                                JToken fullName = ((JObject)jsonData)["name"];
-                                JToken currentPrice = ((JObject)jsonData)["market_data"]["current_price"]["usd"];
+                                JToken fullName = jsonData["name"];
+                                JToken currentPrice = jsonData["market_data"]["current_price"]["usd"];
                                 // Build out the reply
                                 replyEmbed.Title = $"Dollars to { (String)fullName }";
                                 double convCrypto = dollars / Convert.ToDouble(currentPrice.ToString());

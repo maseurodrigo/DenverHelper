@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using Discord.Addons.Interactive;
 using DenverHelper.Data;
 using DenverHelper.Data.Functions;
@@ -29,7 +30,7 @@ namespace DenverHelper.Modules
         [Summary("Get all team members from a particular soccer team")]
         public async Task getTeamMembers([Remainder][Summary("Team name")] String _teamName) {
             // Embed layout reply
-            var replyEmbed = new EmbedBuilder();
+            EmbedBuilder replyEmbed = new EmbedBuilder();
             replyEmbed.WithColor(embedsColor);
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -37,20 +38,20 @@ namespace DenverHelper.Modules
             if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
                 // Get JSON data of the given team from API
                 String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
-                object jsonData_Team = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getAPISoccerTeams(APIKey, 4, null, _teamName.Trim().ToLower(), null, null, null));
+                JObject jsonData_Team = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getAPISoccerTeams(APIKey, 4, null, _teamName.Trim().ToLower(), null, null, null));
                 try {
                     // Store team data (id, name and logo)
-                    JToken teamID = ((JObject)jsonData_Team)["api"]["teams"][0]["team_id"];
-                    JToken teamName = ((JObject)jsonData_Team)["api"]["teams"][0]["name"];
-                    JToken teamLogo = ((JObject)jsonData_Team)["api"]["teams"][0]["logo"];
-                    object jsonData_Squad = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getAPISoccerTeams(APIKey, 1, (int)teamID, null, null, null, DateTime.Now.Year));
+                    JToken teamID = jsonData_Team["api"]["teams"][0]["team_id"];
+                    JToken teamName = jsonData_Team["api"]["teams"][0]["name"];
+                    JToken teamLogo = jsonData_Team["api"]["teams"][0]["logo"];
+                    JObject jsonData_Squad = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getAPISoccerTeams(APIKey, 1, (int)teamID, null, null, null, DateTime.Now.Year));
                     // Fill all variables within JSON data
                     StringBuilder allGoalkeepers = new StringBuilder(),
                         allDefenders = new StringBuilder(),
                         allMidfielders = new StringBuilder(),
                         allAttackers = new StringBuilder();
                     // Loop through all team members
-                    foreach (var player in ((JObject)jsonData_Squad)["api"]["players"]) {
+                    foreach (var player in jsonData_Squad["api"]["players"]) {
                         JToken playerName = ((JObject)player)["player_name"];
                         JToken playerPosition = ((JObject)player)["position"];
                         // Fill sb's within players positions
@@ -95,9 +96,9 @@ namespace DenverHelper.Modules
         [Summary("Get scheduled matches for a particular soccer team")]
         public async Task getTeamGames([Summary("Next/Last match")] String _typeMatch, [Remainder][Summary("Team name")] String _teamName) {
             // Initialize empty string builder for reply
-            var strBuilder = new StringBuilder();
+            StringBuilder strBuilder = new StringBuilder();
             // Embed layout reply
-            var replyEmbed = new EmbedBuilder();
+            EmbedBuilder replyEmbed = new EmbedBuilder();
             replyEmbed.WithColor(embedsColor);
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -105,7 +106,7 @@ namespace DenverHelper.Modules
             if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
                 // Get JSON data of the given team next matches from API
                 String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
-                object jsonData_Team = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getAPISoccerTeams(APIKey, 4, null, _teamName.Trim().ToLower(), null, null, null));
+                JObject jsonData_Team = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getAPISoccerTeams(APIKey, 4, null, _teamName.Trim().ToLower(), null, null, null));
                 try {
                     List<String> typeOptions = new List<String>() { "NEXT", "LAST" };
                     // Checking if "typeMatch" param its valid
@@ -113,7 +114,7 @@ namespace DenverHelper.Modules
                         // Waiting for an input of a valid numeric value
                         await ReplyAsync("Number of matches ?");
                         int countMatches;
-                        var response = await NextMessageAsync(true, true, TimeSpan.FromSeconds(10));
+                        SocketMessage response = await NextMessageAsync(true, true, TimeSpan.FromSeconds(10));
                         if (response != null) {
                             if (int.TryParse(response.Content.Trim(), out countMatches)) {
                                 if(countMatches > 25) {
@@ -126,14 +127,14 @@ namespace DenverHelper.Modules
                                     // Trigger typing state on current channel
                                     await Context.Channel.TriggerTypingAsync();
                                     // Store team data (id, name and logo)
-                                    JToken teamID = ((JObject)jsonData_Team)["api"]["teams"][0]["team_id"];
-                                    JToken teamName = ((JObject)jsonData_Team)["api"]["teams"][0]["name"];
-                                    JToken teamLogo = ((JObject)jsonData_Team)["api"]["teams"][0]["logo"];
+                                    JToken teamID = jsonData_Team["api"]["teams"][0]["team_id"];
+                                    JToken teamName = jsonData_Team["api"]["teams"][0]["name"];
+                                    JToken teamLogo = jsonData_Team["api"]["teams"][0]["logo"];
                                     if (_typeMatch.ToUpper().Equals(typeOptions[0])) {
                                         // Next matches
-                                        object jsonData_Matches = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getAPISoccerTeams(APIKey, 2, (int)teamID, null, countMatches, null, null));
+                                        JObject jsonData_Matches = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getAPISoccerTeams(APIKey, 2, (int)teamID, null, countMatches, null, null));
                                         // Loop through all team matches
-                                        foreach (var match in ((JObject)jsonData_Matches)["api"]["fixtures"]) {
+                                        foreach (var match in jsonData_Matches["api"]["fixtures"]) {
                                             String _tmpAgainst = ((JObject)match)["homeTeam"]["team_id"].ToString() == (String)teamID ? 
                                                 ((JObject)match)["awayTeam"]["team_name"].ToString() : ((JObject)match)["homeTeam"]["team_name"].ToString();
                                             JToken competition = ((JObject)match)["league"]["name"];
@@ -148,9 +149,9 @@ namespace DenverHelper.Modules
                                         replyEmbed.Description = strBuilder.ToString();
                                     } else {
                                         // Last matches
-                                        object jsonData_Matches = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getAPISoccerTeams(APIKey, 5, (int)teamID, null, countMatches, null, null));
+                                        JObject jsonData_Matches = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getAPISoccerTeams(APIKey, 5, (int)teamID, null, countMatches, null, null));
                                         // Loop through all team matches
-                                        foreach (var match in ((JObject)jsonData_Matches)["api"]["fixtures"]) {
+                                        foreach (var match in jsonData_Matches["api"]["fixtures"]) {
                                             KeyValuePair<bool, String> _tmpAgainst = ((JObject)match)["homeTeam"]["team_id"].ToString() == (String)teamID ?
                                                             new KeyValuePair<bool, String>(true, ((JObject)match)["awayTeam"]["team_name"].ToString()) : 
                                                             new KeyValuePair<bool, String>(false, ((JObject)match)["homeTeam"]["team_name"].ToString());
@@ -206,9 +207,9 @@ namespace DenverHelper.Modules
         [Summary("Get predictions for the next scheduled matche(s) of a particular soccer team")]
         public async Task getTeamGamesPredict([Remainder][Summary("Team name")] String _teamName) {
             // Initialize empty string builder for reply
-            var strBuilder = new StringBuilder();
+            StringBuilder strBuilder = new StringBuilder();
             // Embed layout reply
-            var replyEmbed = new EmbedBuilder();
+            EmbedBuilder replyEmbed = new EmbedBuilder();
             replyEmbed.WithColor(embedsColor);
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -216,12 +217,12 @@ namespace DenverHelper.Modules
             if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
                 // Get JSON data of the given team next matches from API
                 String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
-                object jsonData_Team = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getAPISoccerTeams(APIKey, 4, null, _teamName.Trim().ToLower(), null, null, null));
+                JObject jsonData_Team = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getAPISoccerTeams(APIKey, 4, null, _teamName.Trim().ToLower(), null, null, null));
                 try {
                     // Waiting for an input of a valid numeric value
                     await ReplyAsync("Number of matches ?");
                     int countMatches;
-                    var response = await NextMessageAsync(true, true, TimeSpan.FromSeconds(10));
+                    SocketMessage response = await NextMessageAsync(true, true, TimeSpan.FromSeconds(10));
                     if (response != null) {
                         if (int.TryParse(response.Content.Trim(), out countMatches)) {
                             if(countMatches > 25) {
@@ -234,19 +235,19 @@ namespace DenverHelper.Modules
                                 // Trigger typing state on current channel
                                 await Context.Channel.TriggerTypingAsync();
                                 // Store team data (id, name and logo)
-                                JToken teamID = ((JObject)jsonData_Team)["api"]["teams"][0]["team_id"];
-                                JToken teamName = ((JObject)jsonData_Team)["api"]["teams"][0]["name"];
-                                JToken teamLogo = ((JObject)jsonData_Team)["api"]["teams"][0]["logo"];
-                                object jsonData_Game = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getAPISoccerTeams(APIKey, 2, (int)teamID, null, countMatches, null, null));
+                                JToken teamID = jsonData_Team["api"]["teams"][0]["team_id"];
+                                JToken teamName = jsonData_Team["api"]["teams"][0]["name"];
+                                JToken teamLogo = jsonData_Team["api"]["teams"][0]["logo"];
+                                JObject jsonData_Game = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getAPISoccerTeams(APIKey, 2, (int)teamID, null, countMatches, null, null));
                                 // Loop through all team matches
-                                foreach (var match in ((JObject)jsonData_Game)["api"]["fixtures"]) {
+                                foreach (var match in jsonData_Game["api"]["fixtures"]) {
                                     // Current match ID
                                     int _tmpMatchID = Convert.ToInt32(((JObject)match)["fixture_id"].ToString());
                                     // JSON data from current match
-                                    object jsonData_Predict = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getAPISoccerTeams(APIKey, 3, null, String.Empty, null, _tmpMatchID, null));
+                                    JObject jsonData_Predict = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getAPISoccerTeams(APIKey, 3, null, String.Empty, null, _tmpMatchID, null));
                                     string _tmpAgainst = ((JObject)match)["homeTeam"]["team_id"].ToString() == (String)teamID ?
                                                     ((JObject)match)["awayTeam"]["team_name"].ToString() : ((JObject)match)["homeTeam"]["team_name"].ToString();
-                                    string _tmpPredict = ((JObject)jsonData_Predict)["api"]["predictions"][0]["advice"].ToString();
+                                    string _tmpPredict = jsonData_Predict["api"]["predictions"][0]["advice"].ToString();
                                     // Fill StringBuilders with match data
                                     strBuilder.AppendLine($"🆚{ new String(' ', 2) }**{ _tmpAgainst }** with a prediction of **{ _tmpPredict }**");
                                     strBuilder.AppendLine();
@@ -294,12 +295,13 @@ namespace DenverHelper.Modules
                 this.playerWeight = _playerWeight;
             }
         }
+
         [Command("player")]
         [RequireBotPermission(ChannelPermission.SendMessages)]
         [Summary("Get informations relating to the given soccer player")]
         public async Task getPlayerData([Remainder][Summary("Player name")] String _player) {
             // Embed layout reply
-            var replyEmbed = new EmbedBuilder();
+            EmbedBuilder replyEmbed = new EmbedBuilder();
             replyEmbed.WithColor(embedsColor);
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -307,20 +309,20 @@ namespace DenverHelper.Modules
             if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
                 // Get JSON data of the given city from APIs
                 String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
-                object tmpPlayerData = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getAPISoccerPlayers(APIKey, 1, null, _player.Trim().ToLower()));
+                JObject tmpPlayerData = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getAPISoccerPlayers(APIKey, 1, null, _player.Trim().ToLower()));
                 try {
                     // Embed layout reply
-                    var listPlayersEmbed = new EmbedBuilder();
+                    EmbedBuilder listPlayersEmbed = new EmbedBuilder();
                     listPlayersEmbed.WithColor(embedsColor);
                     Dictionary<int, PlayerData> listPlayers = new Dictionary<int, PlayerData>();
                     // Check if the results are too many 
-                    JToken totalResults = ((JObject)tmpPlayerData)["api"]["results"];
+                    JToken totalResults = tmpPlayerData["api"]["results"];
                     if ((int)totalResults > 20) listPlayersEmbed.Description = "You need to be more specific with the player's name";
                     else {
                         // Fill all variables within JSON data
                         StringBuilder allPlayers = new StringBuilder();
                         // Loop through all players with similar names
-                        foreach (var player in ((JObject)tmpPlayerData)["api"]["players"]) {
+                        foreach (var player in tmpPlayerData["api"]["players"]) {
                             JToken playerID = ((JObject)player)["player_id"];
                             JToken playerName = ((JObject)player)["player_name"];
                             JToken playerPosition = ((JObject)player)["position"];
@@ -338,18 +340,18 @@ namespace DenverHelper.Modules
                         await ReplyAsync(null, false, listPlayersEmbed.Build());
                         int userPlayerID;
                         // Waiting for an input of a valid numeric value
-                        var response = await NextMessageAsync(true, true, TimeSpan.FromSeconds(20));
+                        SocketMessage response = await NextMessageAsync(true, true, TimeSpan.FromSeconds(20));
                         if (int.TryParse(response.Content.Trim(), out userPlayerID)) {
                             if (listPlayers.ContainsKey(userPlayerID)) {
                                 // Get all player's statistics
-                                object tmpPlayerStatsData = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getAPISoccerPlayers(APIKey, 3, userPlayerID, String.Empty));
-                                JToken playerTeam = ((JObject)tmpPlayerStatsData)["api"]["players"][0]["team_name"];
-                                JToken playerInjured = ((JObject)tmpPlayerStatsData)["api"]["players"][0]["injured"];
-                                JToken playerNumber = ((JObject)tmpPlayerStatsData)["api"]["players"][0]["number"];
-                                JToken playerRating = ((JObject)tmpPlayerStatsData)["api"]["players"][0]["rating"];
+                                JObject tmpPlayerStatsData = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getAPISoccerPlayers(APIKey, 3, userPlayerID, String.Empty));
+                                JToken playerTeam = tmpPlayerStatsData["api"]["players"][0]["team_name"];
+                                JToken playerInjured = tmpPlayerStatsData["api"]["players"][0]["injured"];
+                                JToken playerNumber = tmpPlayerStatsData["api"]["players"][0]["number"];
+                                JToken playerRating = tmpPlayerStatsData["api"]["players"][0]["rating"];
                                 int totalGoals = 0, totalGames = 0;
                                 // Loop all competitions data that current player have played on
-                                foreach (var player in ((JObject)tmpPlayerStatsData)["api"]["players"]) {
+                                foreach (var player in tmpPlayerStatsData["api"]["players"]) {
                                     totalGoals += (int)((JObject)player)["goals"]["total"];
                                     totalGames += (int)((JObject)player)["games"]["appearences"];
                                 }

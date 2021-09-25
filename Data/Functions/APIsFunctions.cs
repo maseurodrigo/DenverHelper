@@ -88,5 +88,34 @@ namespace DenverHelper.Data.Functions
             IRestResponse respJSON = await restClient.ExecuteAsync(reqst);
             return respJSON.Content;
         }
+
+        public static async Task<String> getAPINBATeam(String _RapidAPIKey, int _apiCall, String _teamName, int? _teamID) {
+            RestClient restClient = new RestClient();
+            switch (_apiCall) {
+                case 1:
+                    // Get and return NBA team data
+                    restClient = new RestClient($"https://api-nba-v1.p.rapidapi.com/teams/nickName/{ _teamName }");
+                    break;
+                case 2:
+                    // Get and return NBA team players through its ID
+                    restClient = new RestClient($"https://api-nba-v1.p.rapidapi.com/players/teamId/{ _teamID }");
+                    break;
+            }
+            RestRequest reqst = new RestRequest(Method.GET);
+            reqst.AddHeader("x-rapidapi-key", _RapidAPIKey);
+            reqst.AddHeader("x-rapidapi-host", "api-nba-v1.p.rapidapi.com");
+            IRestResponse respJSON = await restClient.ExecuteAsync(reqst);
+            return respJSON.Content;
+        }
+
+        public static async Task<String> getAPINBAPlayer(String _RapidAPIKey, String _playerName) {
+            // Get and return NBA player data through its name
+            RestClient restClient = new RestClient($"https://api-nba-v1.p.rapidapi.com/players/firstName/{ _playerName }");
+            RestRequest reqst = new RestRequest(Method.GET);
+            reqst.AddHeader("x-rapidapi-key", _RapidAPIKey);
+            reqst.AddHeader("x-rapidapi-host", "api-nba-v1.p.rapidapi.com");
+            IRestResponse respJSON = await restClient.ExecuteAsync(reqst);
+            return respJSON.Content;
+        }
     }
 }

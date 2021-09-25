@@ -16,6 +16,8 @@
 | **team**/**matches** | **squad** | Get some informations about a given soccer team |
 | **predict** | **tip** | Get predictions for the next scheduled matches of a particular soccer team |
 | **player** |  | Get informations and statistics relating to the given player |
+| **nba_team** |  | Get data from an NBA team |
+| **nba_player** |  | Get informations relating to the given NBA player |
 | **price**/**convert** |  | Get the price of some cryptocurrencies and their status |
 | **poll** |  | Create a new poll with emojis reactions - **(question) / a(👍), b(👎), c(👌), ...** |
 

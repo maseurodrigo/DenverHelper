@@ -26,9 +26,9 @@ namespace DenverHelper.Modules
         [Summary("Get the timezone and weather conditions of the given city")]
         public async Task getCityData([Remainder][Summary("City name")] String _city) {
             // Initialize empty string builder for reply
-            var strBuilder = new StringBuilder();
+            StringBuilder strBuilder = new StringBuilder();
             // Embed layout reply
-            var replyEmbed = new EmbedBuilder();
+            EmbedBuilder replyEmbed = new EmbedBuilder();
             replyEmbed.WithColor(new Color(0, 150, 136));
             // Trigger typing state on current channel
             await Context.Channel.TriggerTypingAsync();
@@ -36,21 +36,21 @@ namespace DenverHelper.Modules
             if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
                 // Get JSON data of the given city from APIs
                 String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id), tmpCity = _city.Trim().ToLower();
-                object tmpTimeZoneData = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getWeatherAPIData(APIKey, 1, tmpCity));
-                object tmpWeatherData = JsonConvert.DeserializeObject<Object>(await APIsFunctions.getWeatherAPIData(APIKey, 2, tmpCity));
+                JObject tmpTimeZoneData = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getWeatherAPIData(APIKey, 1, tmpCity));
+                JObject tmpWeatherData = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getWeatherAPIData(APIKey, 2, tmpCity));
                 try {
                     // Build out the reply
-                    replyEmbed.Title = $"Now in { CultureInfo.CurrentCulture.TextInfo.ToTitleCase(_city.ToLower()) }...";
-                    JToken localTime = ((JObject)tmpTimeZoneData)["location"]["localtime"];
+                    replyEmbed.Title = $"Now in { CultureInfo.CurrentCulture.TextInfo.ToTitleCase(tmpCity) }...";
+                    JToken localTime = tmpTimeZoneData["location"]["localtime"];
                     DateTime localTimeParsed;
                     if (DateTime.TryParse((String)localTime, out localTimeParsed)) {
                         strBuilder.AppendLine($"⏲{ new String(' ', 3) }Current Time: **{ localTimeParsed.ToString("HH:mm") }** hours");
                         strBuilder.AppendLine();
                     }
-                    JToken weatherCondition = ((JObject)tmpWeatherData)["current"]["condition"]["text"];
+                    JToken weatherCondition = tmpWeatherData["current"]["condition"]["text"];
                     strBuilder.AppendLine($"⛅{ new String(' ', 3) }Current Weather: **{ (String)weatherCondition }**");
                     strBuilder.AppendLine();
-                    JToken weatherTempC = ((JObject)tmpWeatherData)["current"]["temp_c"];
+                    JToken weatherTempC = tmpWeatherData["current"]["temp_c"];
                     strBuilder.AppendLine($"🌡{ new String(' ', 3) }Current Temperature: **{ (String)weatherTempC }**c");
                     replyEmbed.Description = strBuilder.ToString();
                 } catch (NullReferenceException) {
