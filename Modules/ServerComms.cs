@@ -49,7 +49,11 @@ namespace DenverHelper.Modules
             MySQLConnect conn = new MySQLConnect(botData);
             if (await MySQLComms.checkCommExists(conn, Context.Guild.Id, _comm.Trim())) {
                 String dataComm = await MySQLComms.getCommData(conn, Context.Guild.Id, _comm.Trim());
-                replyEmbed.AddField(CultureInfo.CurrentCulture.TextInfo.ToTitleCase(_comm.Trim().ToLower()), dataComm);
+                if (dataComm.StartsWith("https") || dataComm.StartsWith("http")) {
+                    replyEmbed.WithTitle(CultureInfo.CurrentCulture.TextInfo.ToTitleCase(_comm.Trim().ToLower()));
+                    replyEmbed.WithDescription(dataComm);
+                    replyEmbed.WithImageUrl(dataComm);
+                } else replyEmbed.AddField(CultureInfo.CurrentCulture.TextInfo.ToTitleCase(_comm.Trim().ToLower()), dataComm);
             } else {
                 // Get a list of similar comms found
                 Dictionary<String, String> allCommands = await MySQLComms.getCommsList(conn, Context.Guild.Id, _comm.Trim());
