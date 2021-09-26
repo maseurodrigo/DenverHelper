@@ -89,6 +89,16 @@ namespace DenverHelper.Data.Functions
             return respJSON.Content;
         }
 
+        public static async Task<String> getAPISoccerGoals(String _RapidAPIKey) {
+            // Get and return the latest goals and highlights video from the given team name
+            RestClient restClient = new RestClient("https://free-football-soccer-videos1.p.rapidapi.com/v1/");
+            RestRequest reqst = new RestRequest(Method.GET);
+            reqst.AddHeader("x-rapidapi-key", _RapidAPIKey);
+            reqst.AddHeader("x-rapidapi-host", "free-football-soccer-videos1.p.rapidapi.com");
+            IRestResponse respJSON = await restClient.ExecuteAsync(reqst);
+            return respJSON.Content;
+        }
+
         public static async Task<String> getAPINBATeam(String _RapidAPIKey, int _apiCall, String _teamName, int? _teamID) {
             RestClient restClient = new RestClient();
             switch (_apiCall) {

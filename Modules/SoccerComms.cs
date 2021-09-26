@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -398,6 +399,54 @@ namespace DenverHelper.Modules
             await conn.closeConnection();
             // Reply with the embed
             await ReplyAsync(null, false, replyEmbed.Build(), null, null, new MessageReference(Context.Message.Id));
+        }
+
+        [Command("goals")]
+        [Alias("highlights")]
+        [RequireBotPermission(ChannelPermission.SendMessages)]
+        [Summary("Get the latest goals and highlights video from a match of a particular soccer team")]
+        public async Task getTeamGamesGoals([Remainder][Summary("Team name")] String _teamName) {
+            // Embed layout reply
+            EmbedBuilder replyEmbed = new EmbedBuilder();
+            replyEmbed.WithColor(embedsColor);
+            // Trigger typing state on current channel
+            await Context.Channel.TriggerTypingAsync();
+            MySQLConnect conn = new MySQLConnect(botData);
+            if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
+                String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
+                try {
+                    // Get JSON data of the given team last matches from API
+                    JArray jsonData_Goals = (JArray)JsonConvert.DeserializeObject(await APIsFunctions.getAPISoccerGoals(APIKey));
+                    // Loop through all matches returned
+                    foreach (JToken match in jsonData_Goals) {
+                        JObject currentMatch = match.ToObject<JObject>();
+                        // If matches titles contains team name
+                        if (currentMatch["title"].ToString().ToLower().Contains(_teamName.ToLower())) {
+                            MatchCollection urlRegex = Regex.Matches((String)currentMatch["embed"], @"(http|https)\://[a-zA-Z0-9-.]+.[a-zA-Z]{2,3}(/\S*)?'");
+                            // Title -> Match teams
+                            replyEmbed.WithTitle((String)currentMatch["title"]);
+                            // URL -> Embed URL
+                            replyEmbed.WithUrl(urlRegex[0].Value.ToString().Remove(urlRegex[0].Value.ToString().Length - 1));
+                            // Reply with the embed
+                            await ReplyAsync(null, false, replyEmbed.Build(), null, null, new MessageReference(Context.Message.Id));
+                        }
+                    }
+                } catch (NullReferenceException) {
+                    replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
+                } catch (WebException) {
+                    replyEmbed.Description = "My apologies, I don't have results for this team...";
+                } catch (JsonReaderException) {
+                    replyEmbed.Description = "I couldn't get results for this command";
+                } catch (Discord.Net.HttpException excep) {
+                    replyEmbed.Description = excep.Message;
+                }
+            } else {
+                replyEmbed.Description = "API key for this server not found on DB";
+                // Reply with the embed
+                await ReplyAsync(null, false, replyEmbed.Build(), null, null, new MessageReference(Context.Message.Id));
+            }
+            // Close local connection
+            await conn.closeConnection();
         }
     }
 }
