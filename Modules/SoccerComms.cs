@@ -427,6 +427,8 @@ namespace DenverHelper.Modules
                             replyEmbed.WithTitle((String)currentMatch["title"]);
                             // URL -> Embed URL
                             replyEmbed.WithUrl(urlRegex[0].Value.ToString().Remove(urlRegex[0].Value.ToString().Length - 1));
+                            replyEmbed.WithDescription((String)currentMatch["date"]);
+                            replyEmbed.WithThumbnailUrl((String)currentMatch["thumbnail"]);
                             // Reply with the embed
                             await ReplyAsync(null, false, replyEmbed.Build(), null, null, new MessageReference(Context.Message.Id));
                         }
