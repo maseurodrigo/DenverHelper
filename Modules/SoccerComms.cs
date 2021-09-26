@@ -422,7 +422,12 @@ namespace DenverHelper.Modules
                         JObject currentMatch = match.ToObject<JObject>();
                         // If matches titles contains team name
                         if (currentMatch["title"].ToString().ToLower().Contains(_teamName.ToLower())) {
-                            MatchCollection urlRegex = Regex.Matches((String)currentMatch["embed"], @"(http|https)\://[a-zA-Z0-9-.]+.[a-zA-Z]{2,3}(/\S*)?'");
+                            String matchEmbed = String.Empty;
+                            if (currentMatch["videos"][0]["embed"].Type == JTokenType.Null || 
+                                currentMatch["videos"][0]["embed"].Type == JTokenType.Undefined) {
+                                matchEmbed = (String)currentMatch["embed"];
+                            } else { matchEmbed = (String)currentMatch["videos"][0]["embed"]; }
+                            MatchCollection urlRegex = Regex.Matches(matchEmbed, @"(http|https)\://[a-zA-Z0-9-.]+.[a-zA-Z]{2,3}(/\S*)?'");
                             // Title -> Match teams
                             replyEmbed.WithTitle((String)currentMatch["title"]);
                             // URL -> Embed URL
