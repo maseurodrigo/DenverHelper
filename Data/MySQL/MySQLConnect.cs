@@ -11,7 +11,7 @@ namespace DenverHelper.Data.MySQL
         private MySqlConnectionStringBuilder myConnBuilder { get; set; }
         private MySqlConnection myConn { get; set; }
         public MySQLConnect(BotData _BotData) {
-            this.myConnBuilder = new MySqlConnectionStringBuilder {
+            myConnBuilder = new MySqlConnectionStringBuilder {
                 Server = _BotData.MySQLConnect.ServerID,
                 UserID = _BotData.MySQLConnect.UserID,
                 Password = _BotData.MySQLConnect.UserPW,
@@ -21,7 +21,7 @@ namespace DenverHelper.Data.MySQL
 
         // Create a new MySQL connection
         private async Task newConnection() {
-            this.myConn = new MySqlConnection(myConnBuilder.ConnectionString);
+            myConn = new MySqlConnection(myConnBuilder.ConnectionString);
             await myConn.OpenAsync();
         }
 

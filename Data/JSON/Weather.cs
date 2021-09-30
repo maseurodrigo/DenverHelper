@@ -1,0 +1,45 @@
+﻿using System;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using RestSharp;
+
+namespace DenverHelper.Data.JSON
+{
+    public partial class WeatherClass {
+        public static async Task<String> GetWeatherAPIData(String _WeatherAPIKey, String _city) {
+            // Get and return weather data (given city name)
+            RestClient restClient = new RestClient($"https://weatherapi-com.p.rapidapi.com/current.json?q={ _city }");
+            RestRequest reqst = new RestRequest(Method.GET);
+            reqst.AddHeader("x-rapidapi-host", "weatherapi-com.p.rapidapi.com");
+            reqst.AddHeader("x-rapidapi-key", _WeatherAPIKey);
+            IRestResponse respJSON = await restClient.ExecuteAsync(reqst);
+            return respJSON.Content;
+        }
+    }
+
+    public partial class Weather {
+        [JsonProperty("location")] public TimezoneData Location { get; set; }
+        [JsonProperty("current")] public WeatherData Current { get; set; }
+    }
+
+    public partial class WeatherData {
+        [JsonProperty("temp_c", Required = Required.Always)] public long TempC { get; set; }
+        [JsonProperty("condition", NullValueHandling = NullValueHandling.Ignore)] public Condition Condition { get; set; }
+        [JsonProperty("feelslike_c", NullValueHandling = NullValueHandling.Ignore)] public long FeelslikeC { get; set; }
+    }
+
+    public partial class Condition {
+        [JsonProperty("text")] public String Text { get; set; }
+        [JsonProperty("icon", NullValueHandling = NullValueHandling.Ignore)] public String Icon { get; set; }
+    }
+
+    public partial class TimezoneData {
+        [JsonProperty("name", Required = Required.Always)] public String Name { get; set; }
+        [JsonProperty("country")] public String Country { get; set; }
+        [JsonProperty("localtime", Required = Required.Always)] public DateTimeOffset Localtime { get; set; }
+    }
+
+    public partial class WeatherGetData {
+        public static Weather FromJson(String json) => JsonConvert.DeserializeObject<Weather>(json, Converter.Settings);
+    }
+}

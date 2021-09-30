@@ -12,7 +12,7 @@ namespace DenverHelper.Modules
     {
         // Getting all services through constructor param with AddSingleton()
         private BotData botData { get; }
-        private APIKeyComms(BotData _BotData) => this.botData = _BotData;
+        private APIKeyComms(BotData _BotData) => botData = _BotData;
 
         [Command("addkey")]
         [Alias("add_key", "newkey", "new_key")]

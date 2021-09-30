@@ -6,10 +6,9 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Discord.Addons.Interactive;
 using DenverHelper.Data;
-using DenverHelper.Data.Functions;
+using DenverHelper.Data.JSON;
 using DenverHelper.Data.MySQL;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace DenverHelper.Modules
 {
@@ -18,7 +17,7 @@ namespace DenverHelper.Modules
     {
         // Getting all services through constructor param with AddSingleton()
         private BotData botData { get; }
-        private CryptoComms(BotData _BotData) => this.botData = _BotData;
+        private CryptoComms(BotData _BotData) => botData = _BotData;
 
         [Command("price")]
         [RequireBotPermission(ChannelPermission.SendMessages)]
@@ -36,29 +35,25 @@ namespace DenverHelper.Modules
                 try {
                     // Get JSON data of the given crypto name from API
                     String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
-                    JObject jsonData = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getCryptoData(APIKey, _coin.Trim().ToLower()));
-                    // Crypto token object
-                    JToken token = jsonData["symbol"];
-                    if (token.Type == JTokenType.Null || token.Type == JTokenType.Undefined) {
+                    CryptoData cryptoData = CryptoGetData.FromJson(await CryptoClass.GetCryptoData(APIKey, _coin.Trim().ToLower()));
+                    if (String.IsNullOrWhiteSpace(cryptoData.Symbol)) {
                         replyEmbed.Description = "I think this doesn't match any cryptocurrency name...";
                     } else {
-                        // Store crypto data (name, price, change on 24h and 7d)
-                        JToken fullName = jsonData["name"];
-                        JToken currentPrice = jsonData["market_data"]["current_price"]["usd"];
-                        JToken last24Hours = jsonData["market_data"]["price_change_percentage_24h"];
-                        JToken last7Days = jsonData["market_data"]["price_change_percentage_7d"];
                         // Build out the reply
-                        replyEmbed.Title = $"Price of { (String)fullName }";
-                        strBuilder.AppendLine($"💵{ new String(' ', 3) }Current Price: **{ Convert.ToDouble(currentPrice.ToString()).ToString("0.00") } $**");
+                        replyEmbed.Title = $"Price of { cryptoData.Name }";
+                        strBuilder.AppendLine($"💵{ new String(' ', 3) }Current Price: **{ Convert.ToDouble(cryptoData.Market.CurrentPrice.Usd).ToString("0.00") } $**");
                         strBuilder.AppendLine();
-                        double tmpLast24Hours = Convert.ToDouble(last24Hours.ToString());
+                        double tmpLast24Hours = Convert.ToDouble(cryptoData.Market.PriceChangePercentage24H);
                         String icon24Hours = tmpLast24Hours >= 0 ? "📈" : "📉";
                         strBuilder.AppendLine($"{ icon24Hours }{ new String(' ', 3) }24H Change: { tmpLast24Hours.ToString("0.00") } %");
                         strBuilder.AppendLine();
-                        double tmpLast7Days = Convert.ToDouble(last7Days.ToString());
+                        double tmpLast7Days = Convert.ToDouble(cryptoData.Market.PriceChangePercentage7D);
                         String icon7Days = tmpLast7Days >= 0 ? "📈" : "📉";
                         strBuilder.AppendLine($"{ icon7Days }{ new String(' ', 3) }7D Change: { tmpLast7Days.ToString("0.00") } %");
                         replyEmbed.Description = strBuilder.ToString();
+                        replyEmbed.WithThumbnailUrl(cryptoData.Image.Large.AbsoluteUri);
+                        replyEmbed.WithFooter(footer => { footer.WithText("CoinGecko"); footer.WithIconUrl("https://bit.ly/3ANPn9S"); });
+                        replyEmbed.WithCurrentTimestamp();
                     }
                 } catch (NullReferenceException) {
                     replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
@@ -100,20 +95,17 @@ namespace DenverHelper.Modules
                             await Context.Channel.TriggerTypingAsync();
                             // Get JSON data of the given crypto name from API
                             String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
-                            JObject jsonData = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getCryptoData(APIKey, _coin));
-                            // Crypto token object
-                            JToken token = jsonData["symbol"];
-                            if (token.Type == JTokenType.Null || token.Type == JTokenType.Undefined) {
+                            CryptoData cryptoData = CryptoGetData.FromJson(await CryptoClass.GetCryptoData(APIKey, _coin.Trim().ToLower()));
+                            if (String.IsNullOrWhiteSpace(cryptoData.Symbol)) {
                                 replyEmbed.Description = "I think this doesn't match any cryptocurrency name...";
                             } else {
-                                // Store crypto data (name, price)
-                                JToken fullName = jsonData["name"];
-                                JToken currentPrice = jsonData["market_data"]["current_price"]["usd"];
                                 // Build out the reply
-                                replyEmbed.Title = $"Dollars to { (String)fullName }";
-                                double convCrypto = dollars / Convert.ToDouble(currentPrice.ToString());
-                                strBuilder.AppendLine($"🔄{ new String(' ', 3) }You will get **{ convCrypto.ToString("0.0000") }** { (String)fullName } ({ (String)token }) for { dollars } dollars");
+                                replyEmbed.Title = $"Dollars to { cryptoData.Name }";
+                                double convCrypto = dollars / Convert.ToDouble(cryptoData.Market.CurrentPrice.Usd);
+                                strBuilder.AppendLine($"🔄{ new String(' ', 3) }You will get **{ convCrypto.ToString("0.0000") }** { cryptoData.Name } ({ cryptoData.Symbol }) for { dollars } dollars");
                                 replyEmbed.Description = strBuilder.ToString();
+                                replyEmbed.WithFooter(footer => { footer.WithText("CoinGecko"); footer.WithIconUrl("https://bit.ly/3ANPn9S"); });
+                                replyEmbed.WithCurrentTimestamp();
                             }
                         } else {
                             // Invalid emoji reaction

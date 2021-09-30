@@ -45,8 +45,6 @@ namespace DenverHelper.Data.MySQL
             return await _MyConn.getReaderListData(sqlQuery, listParams);
         }
 
-        /* ---------------------------------------------------------------------------- */
-
         // Add a new command on DB for the current server
         public static async Task newCommand(MySQLConnect _MyConn, ulong _ServerID, ulong _ChannelID, 
             String _Comm, String _Data, ulong _UserID) {

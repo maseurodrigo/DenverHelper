@@ -15,7 +15,7 @@ namespace DenverHelper.Modules
         // Getting all services through constructor param with AddSingleton()
         private BotData botData { get; }
         private static readonly Color embedsColor = new Color(149, 117, 205);
-        private ServerComms(BotData _BotData) => this.botData = _BotData;
+        private ServerComms(BotData _BotData) => botData = _BotData;
 
         [Command("comms")]
         [Alias("servercomms", "server_comms", "totalcomms", "total_comms")]

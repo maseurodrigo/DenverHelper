@@ -1,15 +1,13 @@
 ﻿using System;
-using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using DenverHelper.Data;
-using DenverHelper.Data.Functions;
 using DenverHelper.Data.MySQL;
+using DenverHelper.Data.JSON;
 
 namespace DenverHelper.Modules
 {
@@ -18,7 +16,7 @@ namespace DenverHelper.Modules
     {
         // Getting all services through constructor param with AddSingleton()
         private BotData botData { get; }
-        private WeatherComms(BotData _BotData) => this.botData = _BotData;
+        private WeatherComms(BotData _BotData) => botData = _BotData;
 
         [Command("city")]
         [Alias("weather", "temperature")]
@@ -36,23 +34,18 @@ namespace DenverHelper.Modules
             if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
                 // Get JSON data of the given city from APIs
                 String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id), tmpCity = _city.Trim().ToLower();
-                JObject tmpTimeZoneData = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getWeatherAPIData(APIKey, 1, tmpCity));
-                JObject tmpWeatherData = (JObject)JsonConvert.DeserializeObject(await APIsFunctions.getWeatherAPIData(APIKey, 2, tmpCity));
+                Weather weatherData = WeatherGetData.FromJson(await WeatherClass.GetWeatherAPIData(APIKey, tmpCity));
                 try {
                     // Build out the reply
-                    replyEmbed.Title = $"Now in { CultureInfo.CurrentCulture.TextInfo.ToTitleCase(tmpCity) }...";
-                    JToken localTime = tmpTimeZoneData["location"]["localtime"];
-                    DateTime localTimeParsed;
-                    if (DateTime.TryParse((String)localTime, out localTimeParsed)) {
-                        strBuilder.AppendLine($"⏲{ new String(' ', 3) }Current Time: **{ localTimeParsed.ToString("HH:mm") }** hours");
-                        strBuilder.AppendLine();
-                    }
-                    JToken weatherCondition = tmpWeatherData["current"]["condition"]["text"];
-                    strBuilder.AppendLine($"⛅{ new String(' ', 3) }Current Weather: **{ (String)weatherCondition }**");
+                    replyEmbed.Title = $"Now in { weatherData.Location.Name }...";
+                    strBuilder.AppendLine($"⏲{ new String(' ', 3) }Current Time: **{ weatherData.Location.Localtime.ToString("t") }**");
                     strBuilder.AppendLine();
-                    JToken weatherTempC = tmpWeatherData["current"]["temp_c"];
-                    strBuilder.AppendLine($"🌡{ new String(' ', 3) }Current Temperature: **{ (String)weatherTempC }**c");
+                    strBuilder.AppendLine($"⛅{ new String(' ', 3) }Current Weather: **{ weatherData.Current.Condition.Text }**");
+                    strBuilder.AppendLine();
+                    strBuilder.AppendLine($"🌡{ new String(' ', 3) }Current Temperature: **{ weatherData.Current.TempC }**c");
                     replyEmbed.Description = strBuilder.ToString();
+                    replyEmbed.WithFooter(footer => { footer.WithText("WeatherAPI"); footer.WithIconUrl("https://bit.ly/3m5oJmL"); });
+                    replyEmbed.WithCurrentTimestamp();
                 } catch (NullReferenceException) {
                     replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
                 } catch (WebException) {

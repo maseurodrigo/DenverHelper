@@ -22,8 +22,6 @@ namespace DenverHelper.Data.MySQL
             return await _MyConn.getReaderData(sqlQuery, listParams);
         }
 
-        /* ---------------------------------------------------------------------------- */
-
         // Add a new API Key on DB for the current server
         public static async Task newAPIKey(MySQLConnect _MyConn, ulong _ServerID, String _APIKey, ulong _UserID) {
             String sqlQuery = "INSERT INTO tbl_APIKeys (ServerID, APIKey, UserID) VALUES (@ServerID, @APIKey, @UserID)";
