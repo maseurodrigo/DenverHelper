@@ -25,7 +25,6 @@ namespace DenverHelper.Data.JSON
     public partial class WeatherData {
         [JsonProperty("temp_c", Required = Required.Always)] public long TempC { get; set; }
         [JsonProperty("condition", NullValueHandling = NullValueHandling.Ignore)] public Condition Condition { get; set; }
-        [JsonProperty("feelslike_c", NullValueHandling = NullValueHandling.Ignore)] public long FeelslikeC { get; set; }
     }
 
     public partial class Condition {
@@ -35,7 +34,6 @@ namespace DenverHelper.Data.JSON
 
     public partial class TimezoneData {
         [JsonProperty("name", Required = Required.Always)] public String Name { get; set; }
-        [JsonProperty("country")] public String Country { get; set; }
         [JsonProperty("localtime", Required = Required.Always)] public DateTimeOffset Localtime { get; set; }
     }
 

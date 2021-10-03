@@ -75,7 +75,7 @@ namespace DenverHelper.Modules
             EmbedBuilder pollEmbed = new EmbedBuilder();
             pollEmbed.WithColor(new Color(144, 164, 174));
             // Verify if exists question and answers
-            String strQuestion = _fullArgs.Split('|')[0].Trim();
+            String strQuestion = _fullArgs.Split('|').First().Trim();
             // EmbedAuthor as EmbedTitle
             EmbedAuthorBuilder pollTitle = new EmbedAuthorBuilder();
             pollTitle.Name = $"📋 { strQuestion.ToUpper() }";
@@ -86,7 +86,7 @@ namespace DenverHelper.Modules
                     // Default Yes/No poll
                     List<IEmote> emojiCodes = new List<IEmote>() { new Emoji("👍"), new Emoji("👎") };
                     // Get the poll option text
-                    pollEmbed.AddField("Yes", emojiCodes[0], true);
+                    pollEmbed.AddField("Yes", emojiCodes.First(), true);
                     pollEmbed.AddField("No", emojiCodes[1], true);
                     // Create the poll in the channel
                     IUserMessage sent = await ReplyAsync(null, false, pollEmbed.Build(), null, null, new MessageReference(Context.Message.Id));
@@ -101,7 +101,7 @@ namespace DenverHelper.Modules
                             // Get the poll option reaction
                             String emojiCode = option.Split('(', ')')[1].Trim();
                             // Get the poll option text (with fields)
-                            pollEmbed.AddField(option.Split('(')[0].Trim(), emojiCode, true);
+                            pollEmbed.AddField(option.Split('(').First().Trim(), emojiCode, true);
                             if (emojiCode.Contains(':')) {
                                 // If the reaction is a custom emoji, get the emoji code from the Guild
                                 String customEmojiName = emojiCode.Split(':')[1];
@@ -124,7 +124,7 @@ namespace DenverHelper.Modules
                 // Default Yes/No poll
                 List<IEmote> emojiCodes = new List<IEmote>() { new Emoji("👍"), new Emoji("👎") };
                 // Get the poll option text
-                pollEmbed.AddField("Yes", emojiCodes[0], true);
+                pollEmbed.AddField("Yes", emojiCodes.First(), true);
                 pollEmbed.AddField("No", emojiCodes[1], true);
                 // Create the poll in the channel
                 IUserMessage sent = await ReplyAsync(null, false, pollEmbed.Build(), null, null, new MessageReference(Context.Message.Id));

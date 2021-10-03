@@ -29,7 +29,6 @@ namespace DenverHelper.Data.JSON.NBA
         [JsonProperty("city")] public String City { get; set; }
         [JsonProperty("fullName", Required = Required.Always)] public String FullName { get; set; }
         [JsonProperty("teamId", Required = Required.Always)] public int TeamId { get; set; }
-        [JsonProperty("nickname", Required = Required.Always)] public String Nickname { get; set; }
         [JsonProperty("logo", NullValueHandling = NullValueHandling.Ignore)] public Uri Logo { get; set; }
         [JsonProperty("shortName", Required = Required.Always)] public String ShortName { get; set; }
         [JsonProperty("leagues")] public Leagues Leagues { get; set; }

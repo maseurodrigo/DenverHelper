@@ -25,10 +25,7 @@ namespace DenverHelper.Data.JSON.Soccer
         [JsonProperty("predictions")] public List<PredictionMatch> Predictions { get; set; }
     }
 
-    public partial class PredictionMatch {
-        [JsonProperty("match_winner", NullValueHandling = NullValueHandling.Ignore)] public String MatchWinner { get; set; }
-        [JsonProperty("advice", NullValueHandling = NullValueHandling.Ignore)] public String Advice { get; set; }
-    }
+    public partial class PredictionMatch { [JsonProperty("advice", NullValueHandling = NullValueHandling.Ignore)] public String Advice { get; set; } }
 
     public partial class MatchTipsGetData {
         public static MatchTips FromJson(String json) => JsonConvert.DeserializeObject<MatchTips>(json, Converter.Settings);

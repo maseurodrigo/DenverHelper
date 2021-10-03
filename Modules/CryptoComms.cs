@@ -53,7 +53,6 @@ namespace DenverHelper.Modules
                         replyEmbed.Description = strBuilder.ToString();
                         replyEmbed.WithThumbnailUrl(cryptoData.Image.Large.AbsoluteUri);
                         replyEmbed.WithFooter(footer => { footer.WithText("CoinGecko"); footer.WithIconUrl("https://bit.ly/3ANPn9S"); });
-                        replyEmbed.WithCurrentTimestamp();
                     }
                 } catch (NullReferenceException) {
                     replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
@@ -105,7 +104,6 @@ namespace DenverHelper.Modules
                                 strBuilder.AppendLine($"🔄{ new String(' ', 3) }You will get **{ convCrypto.ToString("0.0000") }** { cryptoData.Name } ({ cryptoData.Symbol }) for { dollars } dollars");
                                 replyEmbed.Description = strBuilder.ToString();
                                 replyEmbed.WithFooter(footer => { footer.WithText("CoinGecko"); footer.WithIconUrl("https://bit.ly/3ANPn9S"); });
-                                replyEmbed.WithCurrentTimestamp();
                             }
                         } else {
                             // Invalid emoji reaction

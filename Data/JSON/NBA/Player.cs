@@ -28,10 +28,8 @@ namespace DenverHelper.Data.JSON.NBA
     public partial class PlayerData {
         [JsonProperty("firstName", Required = Required.Always)] public String FirstName { get; set; }
         [JsonProperty("lastName", NullValueHandling = NullValueHandling.Ignore)] public String LastName { get; set; }
-        [JsonProperty("teamId", Required = Required.Always)] public int TeamId { get; set; }
         [JsonProperty("yearsPro", NullValueHandling = NullValueHandling.Ignore)] public int? YearsPro { get; set; }
         [JsonProperty("country")] public String Country { get; set; }
-        [JsonProperty("playerId", Required = Required.Always)] public int PlayerId { get; set; }
         [JsonProperty("dateOfBirth")] public DateTimeOffset DateOfBirth { get; set; }
         [JsonProperty("startNba", NullValueHandling = NullValueHandling.Ignore)] public int? StartNba { get; set; }
         [JsonProperty("heightInMeters", NullValueHandling = NullValueHandling.Ignore)] public String HeightInMeters { get; set; }

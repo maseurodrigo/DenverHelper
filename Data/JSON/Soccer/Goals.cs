@@ -26,10 +26,7 @@ namespace DenverHelper.Data.JSON.Soccer
         [JsonProperty("videos")] public List<Video> Videos { get; set; }
     }
 
-    public partial class Video {
-        [JsonProperty("title", NullValueHandling = NullValueHandling.Ignore)] public String Title { get; set; }
-        [JsonProperty("embed", NullValueHandling = NullValueHandling.Ignore)] public String Embed { get; set; }
-    }
+    public partial class Video { [JsonProperty("embed", NullValueHandling = NullValueHandling.Ignore)] public String Embed { get; set; } }
 
     public partial class GoalsGetData {
         public static List<GoalsData> FromJson(String json) => JsonConvert.DeserializeObject<List<GoalsData>>(json, Converter.Settings);

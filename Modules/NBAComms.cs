@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using DenverHelper.Data;
@@ -34,18 +35,18 @@ namespace DenverHelper.Modules
                 Team nbaTeam = TeamGetData.FromJson(await TeamClass.GetAPINBATeam(APIKey, _teamNick.Trim().ToLower()));
                 try {
                     // Build out the reply
-                    replyEmbed.WithTitle(nbaTeam.Api.Teams[0].FullName);
-                    replyEmbed.WithThumbnailUrl(nbaTeam.Api.Teams[0].Logo.AbsoluteUri);
-                    replyEmbed.AddField("City", nbaTeam.Api.Teams[0].City, true);
-                    replyEmbed.AddField("Abbreviation", nbaTeam.Api.Teams[0].ShortName, false);
+                    replyEmbed.WithTitle(nbaTeam.Api.Teams.First().FullName);
+                    replyEmbed.WithThumbnailUrl(nbaTeam.Api.Teams.First().Logo.AbsoluteUri);
+                    replyEmbed.AddField("City", nbaTeam.Api.Teams.First().City, true);
+                    replyEmbed.AddField("Abbreviation", nbaTeam.Api.Teams.First().ShortName, false);
                     // Loop through all team leagues
                     replyEmbed.AddField("🏆 Leagues", new String('_', 8), false);
-                    replyEmbed.AddField("Standard", $"{ nbaTeam.Api.Teams[0].Leagues.Standard.ConfName } ({ nbaTeam.Api.Teams[0].Leagues.Standard.DivName })", true);
-                    replyEmbed.AddField("Vegas", $"{ nbaTeam.Api.Teams[0].Leagues.Vegas.ConfName } ({ nbaTeam.Api.Teams[0].Leagues.Vegas.DivName })", true);
-                    replyEmbed.AddField("Utah", $"{ nbaTeam.Api.Teams[0].Leagues.Utah.ConfName } ({ nbaTeam.Api.Teams[0].Leagues.Utah.DivName })", true);
-                    replyEmbed.AddField("Sacramento", $"{ nbaTeam.Api.Teams[0].Leagues.Sacramento.ConfName } ({ nbaTeam.Api.Teams[0].Leagues.Sacramento.DivName })", true);
+                    replyEmbed.AddField("Standard", $"{ nbaTeam.Api.Teams.First().Leagues.Standard.ConfName } ({ nbaTeam.Api.Teams.First().Leagues.Standard.DivName })", true);
+                    replyEmbed.AddField("Vegas", $"{ nbaTeam.Api.Teams.First().Leagues.Vegas.ConfName } ({ nbaTeam.Api.Teams.First().Leagues.Vegas.DivName })", true);
+                    replyEmbed.AddField("Utah", $"{ nbaTeam.Api.Teams.First().Leagues.Utah.ConfName } ({ nbaTeam.Api.Teams.First().Leagues.Utah.DivName })", true);
+                    replyEmbed.AddField("Sacramento", $"{ nbaTeam.Api.Teams.First().Leagues.Sacramento.ConfName } ({ nbaTeam.Api.Teams.First().Leagues.Sacramento.DivName })", true);
                     // Loop through all team players
-                    TeamPlayers nbaTeamPlayers = TeamPlayersGetData.FromJson(await TeamPlayersClass.GetAPINBATeam(APIKey, nbaTeam.Api.Teams[0].TeamId));
+                    TeamPlayers nbaTeamPlayers = TeamPlayersGetData.FromJson(await TeamPlayersClass.GetAPINBATeam(APIKey, nbaTeam.Api.Teams.First().TeamId));
                     replyEmbed.AddField("🏀 Players", new String('_', 8), false);
                     // Loop through all team members
                     foreach (TeamPlayersData player in nbaTeamPlayers.Api.Players) {
@@ -55,7 +56,6 @@ namespace DenverHelper.Modules
                         } catch (ArgumentException) { }
                     }
                     replyEmbed.WithFooter(footer => { footer.WithText("API-Basketball"); footer.WithIconUrl("https://bit.ly/3ogprjM"); });
-                    replyEmbed.WithCurrentTimestamp();
                 } catch (NullReferenceException) {
                     replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
                 } catch (WebException) {
@@ -88,17 +88,16 @@ namespace DenverHelper.Modules
                 Player nbaPlayer = PlayerGetData.FromJson(await PlayerClass.GetAPINBAPlayer(APIKey, _player.Trim().ToLower()));
                 try {
                     // Build out the reply
-                    replyEmbed.Title = $"**{ nbaPlayer.Api.Players[0].FirstName } { nbaPlayer.Api.Players[0].LastName }**";
-                    replyEmbed.AddField($"First Name", nbaPlayer.Api.Players[0].FirstName, true);
-                    replyEmbed.AddField($"Last Name", nbaPlayer.Api.Players[0].LastName, true);
-                    replyEmbed.AddField($"Country", nbaPlayer.Api.Players[0].Country, true);
-                    replyEmbed.AddField($"Date of Birth", nbaPlayer.Api.Players[0].DateOfBirth.ToString("d"), true);
-                    replyEmbed.AddField($"Height", nbaPlayer.Api.Players[0].HeightInMeters, true);
-                    replyEmbed.AddField($"Weight", nbaPlayer.Api.Players[0].WeightInKilograms, true);
-                    replyEmbed.AddField($"Start on NBA", nbaPlayer.Api.Players[0].StartNba, true);                    
-                    replyEmbed.AddField($"Years on NBA", nbaPlayer.Api.Players[0].YearsPro, true);
+                    replyEmbed.Title = $"**{ nbaPlayer.Api.Players.First().FirstName } { nbaPlayer.Api.Players.First().LastName }**";
+                    replyEmbed.AddField($"First Name", nbaPlayer.Api.Players.First().FirstName, true);
+                    replyEmbed.AddField($"Last Name", nbaPlayer.Api.Players.First().LastName, true);
+                    replyEmbed.AddField($"Country", nbaPlayer.Api.Players.First().Country, true);
+                    replyEmbed.AddField($"Date of Birth", nbaPlayer.Api.Players.First().DateOfBirth.ToString("d"), true);
+                    replyEmbed.AddField($"Height", nbaPlayer.Api.Players.First().HeightInMeters, true);
+                    replyEmbed.AddField($"Weight", nbaPlayer.Api.Players.First().WeightInKilograms, true);
+                    replyEmbed.AddField($"Start on NBA", nbaPlayer.Api.Players.First().StartNba, true);                    
+                    replyEmbed.AddField($"Years on NBA", nbaPlayer.Api.Players.First().YearsPro, true);
                     replyEmbed.WithFooter(footer => { footer.WithText("API-Basketball"); footer.WithIconUrl("https://bit.ly/3ogprjM"); });
-                    replyEmbed.WithCurrentTimestamp();
                 } catch (NullReferenceException) {
                     replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
                 } catch (WebException) {

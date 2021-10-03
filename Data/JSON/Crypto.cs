@@ -18,7 +18,6 @@ namespace DenverHelper.Data.JSON
     }
 
     public partial class CryptoData {
-        [JsonProperty("id", Required = Required.Always)] public String Id { get; set; }
         [JsonProperty("symbol", Required = Required.Always)] public String Symbol { get; set; }
         [JsonProperty("name", Required = Required.Always)] public String Name { get; set; }
         [JsonProperty("image")] public ImageData Image { get; set; }

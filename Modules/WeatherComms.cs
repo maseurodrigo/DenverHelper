@@ -42,10 +42,10 @@ namespace DenverHelper.Modules
                     strBuilder.AppendLine();
                     strBuilder.AppendLine($"⛅{ new String(' ', 3) }Current Weather: **{ weatherData.Current.Condition.Text }**");
                     strBuilder.AppendLine();
-                    strBuilder.AppendLine($"🌡{ new String(' ', 3) }Current Temperature: **{ weatherData.Current.TempC }**c");
+                    strBuilder.AppendLine($"🌡{ new String(' ', 3) }Current Temperature: **{ weatherData.Current.TempC }c**");
                     replyEmbed.Description = strBuilder.ToString();
+                    replyEmbed.WithThumbnailUrl(new UriBuilder(weatherData.Current.Condition.Icon.TrimStart('/')).Uri.AbsoluteUri);
                     replyEmbed.WithFooter(footer => { footer.WithText("WeatherAPI"); footer.WithIconUrl("https://bit.ly/3m5oJmL"); });
-                    replyEmbed.WithCurrentTimestamp();
                 } catch (NullReferenceException) {
                     replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
                 } catch (WebException) {

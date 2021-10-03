@@ -73,7 +73,6 @@ namespace DenverHelper.Modules
                     replyEmbed.AddField("​🔥​​ ​Midfielders", allMidfielders.ToString(), true);
                     replyEmbed.AddField("​👟​​​ Strikers", allAttackers.ToString(), true);
                     replyEmbed.WithFooter(footer => { footer.WithText("API-Football"); footer.WithIconUrl("https://bit.ly/3CSFojZ"); });
-                    replyEmbed.WithCurrentTimestamp();
                 } catch (NullReferenceException) {
                     replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
                 } catch (WebException) {
@@ -138,7 +137,6 @@ namespace DenverHelper.Modules
                                         replyEmbed.WithThumbnailUrl(teamSearchData.Api.Teams.First().Logo.AbsoluteUri);
                                         replyEmbed.Description = strBuilder.ToString();
                                         replyEmbed.WithFooter(footer => { footer.WithText("API-Football"); footer.WithIconUrl("https://bit.ly/3CSFojZ"); });
-                                        replyEmbed.WithCurrentTimestamp();
                                     } else {
                                         // Last matches
                                         TeamMatches matchesData = MatchesGetData.FromJson(await LastMatchesClass.GetAPISoccerTeams(APIKey, teamSearchData.Api.Teams.First().TeamId, countMatches));
@@ -166,7 +164,6 @@ namespace DenverHelper.Modules
                                         replyEmbed.WithThumbnailUrl(teamSearchData.Api.Teams.First().Logo.AbsoluteUri);
                                         replyEmbed.Description = strBuilder.ToString();
                                         replyEmbed.WithFooter(footer => { footer.WithText("API-Football"); footer.WithIconUrl("https://bit.ly/3CSFojZ"); });
-                                        replyEmbed.WithCurrentTimestamp();
                                     }
                                 }
                             } else {
@@ -238,7 +235,6 @@ namespace DenverHelper.Modules
                                 replyEmbed.WithThumbnailUrl(teamSearchData.Api.Teams.First().Logo.AbsoluteUri);
                                 replyEmbed.Description = strBuilder.ToString();
                                 replyEmbed.WithFooter(footer => { footer.WithText("API-Football"); footer.WithIconUrl("https://bit.ly/3CSFojZ"); });
-                                replyEmbed.WithCurrentTimestamp();
                             }
                         } else {
                             // Invalid emoji reaction
@@ -320,7 +316,6 @@ namespace DenverHelper.Modules
                                 replyEmbed.AddField($"Total Goals", totalGoals, true);
                                 replyEmbed.AddField($"Total Games", totalGames, true);
                                 replyEmbed.WithFooter(footer => { footer.WithText("API-Football"); footer.WithIconUrl("https://bit.ly/3CSFojZ"); });
-                                replyEmbed.WithCurrentTimestamp();
                             } else replyEmbed.Description = "Sorry boss, I don't know nothing about this player";
                         } else {
                             // Invalid emoji reaction
@@ -377,7 +372,6 @@ namespace DenverHelper.Modules
                             replyEmbed.WithDescription(match.Date.ToString("g"));
                             replyEmbed.WithThumbnailUrl(match.Thumbnail.AbsoluteUri);
                             replyEmbed.WithFooter(footer => { footer.WithText("ScoreBat"); footer.WithIconUrl("https://bit.ly/39KwWa0"); });
-                            replyEmbed.WithCurrentTimestamp();
                             // Reply with the embed
                             await ReplyAsync(null, false, replyEmbed.Build(), null, null, new MessageReference(Context.Message.Id));
                         }
