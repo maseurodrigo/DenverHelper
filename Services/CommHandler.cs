@@ -46,9 +46,7 @@ namespace DenverHelper.Services
         }
 
         private async Task botLogEvents(LogMessage arg) {
-            await Task.Factory.StartNew(() => {
-                Console.WriteLine(arg.ToString());
-            });
+            await Task.Factory.StartNew(() => { Console.WriteLine(arg.ToString()); });
         }
     }
 }

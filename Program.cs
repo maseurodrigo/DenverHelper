@@ -39,9 +39,7 @@ namespace DenverHelper
                     .AddSingleton<BotService>()
                     .AddSingleton(botData)
                     .AddSingleton<CommHandler>();
-            } catch (FileNotFoundException excep) {
-                Console.WriteLine(excep.Message);
-            }
+            } catch (FileNotFoundException excep) { Console.WriteLine(excep.Message); }
             ServiceProvider serviceProvider = discordService.BuildServiceProvider();
             serviceProvider.GetRequiredService<CommHandler>();
             // Start discord bot connection asynchronous
