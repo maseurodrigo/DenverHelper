@@ -34,7 +34,7 @@ namespace DenverHelper.Modules
             if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
                 // Get JSON data of the given city from APIs
                 String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id), tmpCity = _city.Trim().ToLower();
-                Weather weatherData = WeatherGetData.FromJson(await WeatherClass.GetWeatherAPIData(APIKey, tmpCity));
+                Weather weatherData = WeatherGetData.FromJson(await WeatherClass.GetWeatherData(APIKey, tmpCity));
                 try {
                     // Build out the reply
                     replyEmbed.Title = $"Now in { weatherData.Location.Name }...";
@@ -45,14 +45,10 @@ namespace DenverHelper.Modules
                     strBuilder.AppendLine($"🌡{ new String(' ', 3) }Current Temperature: **{ weatherData.Current.TempC }c**");
                     replyEmbed.Description = strBuilder.ToString();
                     replyEmbed.WithThumbnailUrl(new UriBuilder(weatherData.Current.Condition.Icon.TrimStart('/')).Uri.AbsoluteUri);
-                    replyEmbed.WithFooter(footer => { footer.WithText("WeatherAPI"); footer.WithIconUrl("https://bit.ly/3m5oJmL"); });
-                } catch (NullReferenceException) {
-                    replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
-                } catch (WebException) {
-                    replyEmbed.Description = "Sorry boss, I think this is not a city...";
-                } catch (JsonReaderException) {
-                    replyEmbed.Description = "I couldn't get results for this command";
-                }
+                } 
+                catch (NullReferenceException) { replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key"; } 
+                catch (WebException) { replyEmbed.Description = "Sorry boss, I think this is not a city..."; } 
+                catch (JsonReaderException) { replyEmbed.Description = "I couldn't get results for this command"; }
             } else replyEmbed.Description = "API key for this server not found on DB";
             // Close local connection
             await conn.closeConnection();

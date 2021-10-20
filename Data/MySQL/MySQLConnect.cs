@@ -64,8 +64,7 @@ namespace DenverHelper.Data.MySQL
                 // Loop through all sqlparams
                 foreach (MySqlParameter param in listParams) mySQLComm.Parameters.Add(param);
                 using (MySqlDataReader reader = await mySQLComm.ExecuteReaderAsync()) {
-                    while (await reader.ReadAsync())
-                        commsList.Add(reader[0].ToString(), reader[1].ToString());
+                    while (await reader.ReadAsync()) commsList.Add(reader[0].ToString(), reader[1].ToString());
                     return commsList;
                 }
             }

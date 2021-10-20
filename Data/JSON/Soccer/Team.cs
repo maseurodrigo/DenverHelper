@@ -7,7 +7,7 @@ using RestSharp;
 namespace DenverHelper.Data.JSON.Soccer
 {
     public partial class TeamClass {
-        public static async Task<String> GetAPISoccerTeams(String _RapidAPIKey, String _teamName) {
+        public static async Task<String> GetSoccerTeam(String _RapidAPIKey, String _teamName) {
             // Get and return data of a team through its name
             RestClient restClient = new RestClient($"https://api-football-v1.p.rapidapi.com/v2/teams/search/{ _teamName }");
             RestRequest reqst = new RestRequest(Method.GET);

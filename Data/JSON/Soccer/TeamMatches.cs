@@ -7,7 +7,7 @@ using RestSharp;
 namespace DenverHelper.Data.JSON.Soccer
 {
     public partial class NextMatchesClass {
-        public static async Task<String> GetAPISoccerTeams(String _RapidAPIKey, int? _idTeam, int? _numGames) {
+        public static async Task<String> GetSoccerTeamMatches(String _RapidAPIKey, int? _idTeam, int? _numGames) {
             // Get and return next games of given team
             RestClient restClient = new RestClient($"https://api-football-v1.p.rapidapi.com/v2/fixtures/team/{ _idTeam }/next/{ _numGames }");
             RestRequest reqst = new RestRequest(Method.GET);
@@ -19,7 +19,7 @@ namespace DenverHelper.Data.JSON.Soccer
     }
 
     public partial class LastMatchesClass {
-        public static async Task<String> GetAPISoccerTeams(String _RapidAPIKey, int? _idTeam, int? _numGames) {
+        public static async Task<String> GetSoccerTeamMatches(String _RapidAPIKey, int? _idTeam, int? _numGames) {
             // Get and return last games of given team
             RestClient restClient = new RestClient($"https://api-football-v1.p.rapidapi.com/v2/fixtures/team/{ _idTeam }/last/{ _numGames }");
             RestRequest reqst = new RestRequest(Method.GET);

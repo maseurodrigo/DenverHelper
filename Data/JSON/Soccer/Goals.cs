@@ -7,7 +7,7 @@ using RestSharp;
 namespace DenverHelper.Data.JSON.Soccer
 {
     public partial class GoalsClass {
-        public static async Task<String> GetAPISoccerGoals(String _RapidAPIKey) {
+        public static async Task<String> GetSoccerGoals(String _RapidAPIKey) {
             // Get and return the latest goals and highlights video from the given team name
             RestClient restClient = new RestClient("https://free-football-soccer-videos1.p.rapidapi.com/v1/");
             RestRequest reqst = new RestRequest(Method.GET);

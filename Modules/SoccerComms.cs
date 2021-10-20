@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -25,68 +24,6 @@ namespace DenverHelper.Modules
         private static readonly Color embedsColor = new Color(139, 195, 74);
         private SoccerComms(BotData _BotData) => botData = _BotData;
 
-        [Command("team")]
-        [Alias("squad")]
-        [RequireBotPermission(ChannelPermission.SendMessages)]
-        [Summary("Get all team members from a particular soccer team")]
-        public async Task getTeamMembers([Remainder][Summary("Team name")] String _teamName) {
-            // Embed layout reply
-            EmbedBuilder replyEmbed = new EmbedBuilder();
-            replyEmbed.WithColor(embedsColor);
-            // Trigger typing state on current channel
-            await Context.Channel.TriggerTypingAsync();
-            MySQLConnect conn = new MySQLConnect(botData);
-            if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
-                // Get JSON data of the given team from API
-                String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
-                Team teamSearchData = TeamGetData.FromJson(await TeamClass.GetAPISoccerTeams(APIKey, _teamName.Trim().ToLower()));
-                try {
-                    TeamSquad teamSquadData = TeamSquadGetData.FromJson(await TeamSquadClass.GetAPISoccerTeams(APIKey, teamSearchData.Api.Teams.First().TeamId, DateTime.Now.Year));
-                    // Fill all variables within JSON data
-                    StringBuilder allGoalkeepers = new StringBuilder(),
-                        allDefenders = new StringBuilder(),
-                        allMidfielders = new StringBuilder(),
-                        allAttackers = new StringBuilder();
-                    // Loop through all team members
-                    foreach (TeamSquadPlayer player in teamSquadData.Api.Players) {
-                        // Fill sb's within players positions
-                        switch (player.Position) {
-                            case "Goalkeeper":
-                                allGoalkeepers.AppendLine(player.PlayerName);
-                                break;
-                            case "Defender":
-                                allDefenders.AppendLine(player.PlayerName);
-                                break;
-                            case "Midfielder":
-                                allMidfielders.AppendLine(player.PlayerName);
-                                break;
-                            case "Attacker":
-                                allAttackers.AppendLine(player.PlayerName);
-                                break;
-                        }
-                    }
-                    // Build out the reply
-                    replyEmbed.Title = teamSearchData.Api.Teams.First().Name;
-                    replyEmbed.WithThumbnailUrl(teamSearchData.Api.Teams.First().Logo.AbsoluteUri);
-                    replyEmbed.AddField("🙌​​​​ Goalkeepers", allGoalkeepers.ToString(), true);
-                    replyEmbed.AddField("​🦶​​ Defenders", allDefenders.ToString(), true);
-                    replyEmbed.AddField("​🔥​​ ​Midfielders", allMidfielders.ToString(), true);
-                    replyEmbed.AddField("​👟​​​ Strikers", allAttackers.ToString(), true);
-                    replyEmbed.WithFooter(footer => { footer.WithText("API-Football"); footer.WithIconUrl("https://bit.ly/3CSFojZ"); });
-                } catch (NullReferenceException) {
-                    replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
-                } catch (WebException) {
-                    replyEmbed.Description = "My apologies, I honestly don't know this team...";
-                } catch (JsonReaderException) {
-                    replyEmbed.Description = "I couldn't get results for this command";
-                }
-            } else replyEmbed.Description = "API key for this server not found on DB";
-            // Close local connection
-            await conn.closeConnection();
-            // Reply with the embed
-            await ReplyAsync(null, false, replyEmbed.Build(), null, null, new MessageReference(Context.Message.Id));
-        }
-
         [Command("matches")]
         [RequireBotPermission(ChannelPermission.SendMessages)]
         [Summary("Get scheduled matches for a particular soccer team")]
@@ -102,7 +39,7 @@ namespace DenverHelper.Modules
             if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
                 // Get JSON data of the given team next matches from API
                 String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
-                Team teamSearchData = TeamGetData.FromJson(await TeamClass.GetAPISoccerTeams(APIKey, _teamName.Trim().ToLower()));
+                Team teamSearchData = TeamGetData.FromJson(await TeamClass.GetSoccerTeam(APIKey, _teamName.Trim().ToLower()));
                 try {
                     List<String> typeOptions = new List<String>() { "NEXT", "LAST" };
                     // Checking if "typeMatch" param its valid
@@ -124,7 +61,7 @@ namespace DenverHelper.Modules
                                     await Context.Channel.TriggerTypingAsync();
                                     if (_typeMatch.ToUpper().Equals(typeOptions.First())) {
                                         // Next matches
-                                        TeamMatches matchesData = MatchesGetData.FromJson(await NextMatchesClass.GetAPISoccerTeams(APIKey, teamSearchData.Api.Teams.First().TeamId, countMatches));
+                                        TeamMatches matchesData = MatchesGetData.FromJson(await NextMatchesClass.GetSoccerTeamMatches(APIKey, teamSearchData.Api.Teams.First().TeamId, countMatches));
                                         // Loop through all team matches
                                         foreach (FixtureMatches match in matchesData.Api.Fixtures) {
                                             String _tmpAgainst = match.HomeTeam.TeamId == teamSearchData.Api.Teams.First().TeamId ? match.AwayTeam.TeamName : match.HomeTeam.TeamName;
@@ -136,10 +73,9 @@ namespace DenverHelper.Modules
                                         replyEmbed.Title = $"Next matches of { teamSearchData.Api.Teams.First().Name }";
                                         replyEmbed.WithThumbnailUrl(teamSearchData.Api.Teams.First().Logo.AbsoluteUri);
                                         replyEmbed.Description = strBuilder.ToString();
-                                        replyEmbed.WithFooter(footer => { footer.WithText("API-Football"); footer.WithIconUrl("https://bit.ly/3CSFojZ"); });
                                     } else {
                                         // Last matches
-                                        TeamMatches matchesData = MatchesGetData.FromJson(await LastMatchesClass.GetAPISoccerTeams(APIKey, teamSearchData.Api.Teams.First().TeamId, countMatches));
+                                        TeamMatches matchesData = MatchesGetData.FromJson(await LastMatchesClass.GetSoccerTeamMatches(APIKey, teamSearchData.Api.Teams.First().TeamId, countMatches));
                                         // Loop through all team matches
                                         foreach (FixtureMatches match in matchesData.Api.Fixtures) {
                                             KeyValuePair<bool, String> _tmpAgainst = match.HomeTeam.TeamId == teamSearchData.Api.Teams.First().TeamId ? 
@@ -163,7 +99,6 @@ namespace DenverHelper.Modules
                                         replyEmbed.Title = $"Next matches of { teamSearchData.Api.Teams.First().Name }";
                                         replyEmbed.WithThumbnailUrl(teamSearchData.Api.Teams.First().Logo.AbsoluteUri);
                                         replyEmbed.Description = strBuilder.ToString();
-                                        replyEmbed.WithFooter(footer => { footer.WithText("API-Football"); footer.WithIconUrl("https://bit.ly/3CSFojZ"); });
                                     }
                                 }
                             } else {
@@ -173,13 +108,10 @@ namespace DenverHelper.Modules
                             }
                         } else await ReplyAsync($"{ Context.User.Mention } you didnt reply before the timeout"); // response timeout
                     } else replyEmbed.Description = "Sorry, but I need a 'next' or 'last' parameter";
-                } catch(NullReferenceException) {
-                    replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
-                } catch (WebException) {
-                    replyEmbed.Description = "My apologies, I honestly don't know this team...";
-                } catch (JsonReaderException) {
-                    replyEmbed.Description = "I couldn't get results for this command";
-                }
+                } 
+                catch(NullReferenceException) { replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key"; } 
+                catch (WebException) { replyEmbed.Description = "My apologies, I honestly don't know this team..."; } 
+                catch (JsonReaderException) { replyEmbed.Description = "I couldn't get results for this command"; }
             } else replyEmbed.Description = "API key for this server not found on DB";
             // Close local connection
             await conn.closeConnection();
@@ -203,7 +135,7 @@ namespace DenverHelper.Modules
             if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
                 // Get JSON data of the given team next matches from API
                 String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
-                Team teamSearchData = TeamGetData.FromJson(await TeamClass.GetAPISoccerTeams(APIKey, _teamName.Trim().ToLower()));
+                Team teamSearchData = TeamGetData.FromJson(await TeamClass.GetSoccerTeam(APIKey, _teamName.Trim().ToLower()));
                 try {
                     // Waiting for an input of a valid numeric value
                     await ReplyAsync("Number of matches ?");
@@ -220,11 +152,11 @@ namespace DenverHelper.Modules
                                 await response.AddReactionAsync(new Emoji("👍"));
                                 // Trigger typing state on current channel
                                 await Context.Channel.TriggerTypingAsync();
-                                TeamMatches matchesData = MatchesGetData.FromJson(await NextMatchesClass.GetAPISoccerTeams(APIKey, teamSearchData.Api.Teams.First().TeamId, countMatches));
+                                TeamMatches matchesData = MatchesGetData.FromJson(await NextMatchesClass.GetSoccerTeamMatches(APIKey, teamSearchData.Api.Teams.First().TeamId, countMatches));
                                 // Loop through all team matches
                                 foreach (FixtureMatches match in matchesData.Api.Fixtures) {
                                     // JSON data from current match
-                                    MatchTips matchTipData = MatchTipsGetData.FromJson(await MatchTipsClass.GetAPISoccerTeams(APIKey, match.FixtureId));
+                                    MatchTips matchTipData = MatchTipsGetData.FromJson(await MatchTipsClass.GetSoccerMatchTips(APIKey, match.FixtureId));
                                     String _tmpAgainst = match.HomeTeam.TeamId == teamSearchData.Api.Teams.First().TeamId ? match.AwayTeam.TeamName : match.HomeTeam.TeamName;
                                     // Fill StringBuilders with match data
                                     strBuilder.AppendLine($"🆚{ new String(' ', 2) }**{ _tmpAgainst }** with a prediction of **{ matchTipData.Api.Predictions.First().Advice }**");
@@ -234,7 +166,6 @@ namespace DenverHelper.Modules
                                 replyEmbed.Title = $"Next matches of { teamSearchData.Api.Teams.First().Name }";
                                 replyEmbed.WithThumbnailUrl(teamSearchData.Api.Teams.First().Logo.AbsoluteUri);
                                 replyEmbed.Description = strBuilder.ToString();
-                                replyEmbed.WithFooter(footer => { footer.WithText("API-Football"); footer.WithIconUrl("https://bit.ly/3CSFojZ"); });
                             }
                         } else {
                             // Invalid emoji reaction
@@ -242,98 +173,10 @@ namespace DenverHelper.Modules
                             replyEmbed.Description = "Invalid numeric value";
                         }
                     } else await ReplyAsync($"{ Context.User.Mention } you didnt reply before the timeout"); // response timeout
-                } catch(NullReferenceException) {
-                    replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
-                } catch (WebException) {
-                    replyEmbed.Description = "My apologies, I honestly don't know this team...";
-                } catch (JsonReaderException) {
-                    replyEmbed.Description = "I couldn't get results for this command";
-                }
-            } else replyEmbed.Description = "API key for this server not found on DB";
-            // Close local connection
-            await conn.closeConnection();
-            // Reply with the embed
-            await ReplyAsync(null, false, replyEmbed.Build(), null, null, new MessageReference(Context.Message.Id));
-        }
-
-        [Command("player")]
-        [RequireBotPermission(ChannelPermission.SendMessages)]
-        [Summary("Get informations relating to the given soccer player")]
-        public async Task getPlayerData([Remainder][Summary("Player name")] String _player) {
-            // Embed layout reply
-            EmbedBuilder replyEmbed = new EmbedBuilder();
-            replyEmbed.WithColor(embedsColor);
-            // Trigger typing state on current channel
-            await Context.Channel.TriggerTypingAsync();
-            MySQLConnect conn = new MySQLConnect(botData);
-            if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
-                // Get JSON data of the given city from APIs
-                String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
-                PlayerSearch playerSearchData = PlayerSearchGetData.FromJson(await PlayerSearchClass.GetAPISoccerPlayers(APIKey, _player.Trim().ToLower()));
-                try {
-                    // Embed layout reply
-                    EmbedBuilder listPlayersEmbed = new EmbedBuilder();
-                    listPlayersEmbed.WithColor(embedsColor);
-                    Dictionary<int, PlayerSearchData> listPlayers = new Dictionary<int, PlayerSearchData>();
-                    // Check if the results are too many 
-                    if (playerSearchData.Api.Results > 20) listPlayersEmbed.Description = "You need to be more specific with the player's name";
-                    else {
-                        // Fill all variables within JSON data
-                        StringBuilder allPlayers = new StringBuilder();
-                        // Loop through all players with similar names
-                        foreach (PlayerSearchData player in playerSearchData.Api.Players) {
-                            allPlayers.AppendLine($"`{ player.PlayerId }`: **{ player.PlayerName }** ({ player.Nationality })");
-                            listPlayers.Add(player.PlayerId, player);
-                        }
-                        // Build out the reply
-                        listPlayersEmbed.AddField($"Some { CultureInfo.CurrentCulture.TextInfo.ToTitleCase(_player.Trim().ToLower()) }'s", allPlayers.ToString(), true);
-                        // Reply with the embed
-                        await ReplyAsync(null, false, listPlayersEmbed.Build());
-                        int userPlayerID;
-                        // Waiting for an input of a valid numeric value
-                        SocketMessage response = await NextMessageAsync(true, true, TimeSpan.FromSeconds(20));
-                        if (int.TryParse(response.Content.Trim(), out userPlayerID)) {
-                            if (listPlayers.ContainsKey(userPlayerID)) {
-                                // Get all player's statistics
-                                Player playerData = PlayerGetData.FromJson(await PlayerClass.GetAPISoccerPlayers(APIKey, userPlayerID));
-                                int totalGoals = 0, totalGames = 0;
-                                // Loop all competitions data that current player have played on
-                                foreach (PlayerData player in playerData.Api.Players) {
-                                    totalGoals += player.Goals.Total;
-                                    totalGames += player.Games.Appearences;
-                                }
-                                // Build out the reply
-                                replyEmbed.Title = $"**{ playerData.Api.Players.First().PlayerName }**";
-                                replyEmbed.AddField($"Name", playerData.Api.Players.First().PlayerName, true);
-                                replyEmbed.AddField($"Nationality", playerData.Api.Players.First().Nationality, true);
-                                replyEmbed.AddField($"Age", playerData.Api.Players.First().Age, true);
-                                replyEmbed.AddField($"Height", playerData.Api.Players.First().Height, true);
-                                replyEmbed.AddField($"Weight", playerData.Api.Players.First().Weight, true);
-                                replyEmbed.AddField($"Current Team", playerData.Api.Players.First().TeamName, true);
-                                if(playerData.Api.Players.First().Number.HasValue) replyEmbed.AddField($"Number", playerData.Api.Players.First().Number, true);
-                                replyEmbed.AddField($"Position", playerData.Api.Players.First().Position, true);
-                                replyEmbed.AddField($"Rating", playerData.Api.Players.First().Rating, true);
-                                replyEmbed.AddField($"Total Goals", totalGoals, true);
-                                replyEmbed.AddField($"Total Games", totalGames, true);
-                                replyEmbed.WithFooter(footer => { footer.WithText("API-Football"); footer.WithIconUrl("https://bit.ly/3CSFojZ"); });
-                            } else replyEmbed.Description = "Sorry boss, I don't know nothing about this player";
-                        } else {
-                            // Invalid emoji reaction
-                            await response.AddReactionAsync(new Emoji("👎"));
-                            replyEmbed.Description = "Invalid numeric value";
-                        }
-                    }
-                } catch (NullReferenceException) {
-                    replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
-                } catch (WebException) {
-                    replyEmbed.Description = "Sorry boss, I think this is not a player...";
-                } catch (JsonReaderException) {
-                    replyEmbed.Description = "I couldn't get results for this command";
-                } catch (ArgumentException) {
-                    replyEmbed.Description = "I don't have complete data on this player";
-                } catch (Discord.Net.HttpException excep) {
-                    replyEmbed.Description = excep.Message;
-                }
+                } 
+                catch(NullReferenceException) { replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key"; } 
+                catch (WebException) { replyEmbed.Description = "My apologies, I honestly don't know this team..."; } 
+                catch (JsonReaderException) { replyEmbed.Description = "I couldn't get results for this command"; }
             } else replyEmbed.Description = "API key for this server not found on DB";
             // Close local connection
             await conn.closeConnection();
@@ -356,7 +199,7 @@ namespace DenverHelper.Modules
                 String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
                 try {
                     // Get JSON data of the given team last matches from API
-                    List<GoalsData> goalsData = GoalsGetData.FromJson(await GoalsClass.GetAPISoccerGoals(APIKey));
+                    List<GoalsData> goalsData = GoalsGetData.FromJson(await GoalsClass.GetSoccerGoals(APIKey));
                     // Loop through all matches returned
                     foreach (GoalsData match in goalsData) {
                         // If matches titles contains team name
@@ -376,15 +219,11 @@ namespace DenverHelper.Modules
                             await ReplyAsync(null, false, replyEmbed.Build(), null, null, new MessageReference(Context.Message.Id));
                         }
                     }
-                } catch (NullReferenceException) {
-                    replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
-                } catch (WebException) {
-                    replyEmbed.Description = "My apologies, I don't have results for this team...";
-                } catch (JsonReaderException) {
-                    replyEmbed.Description = "I couldn't get results for this command";
-                } catch (Discord.Net.HttpException excep) {
-                    replyEmbed.Description = excep.Message;
-                }
+                } 
+                catch (NullReferenceException) { replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key"; } 
+                catch (WebException) { replyEmbed.Description = "My apologies, I don't have results for this team..."; } 
+                catch (JsonReaderException) { replyEmbed.Description = "I couldn't get results for this command"; } 
+                catch (Discord.Net.HttpException excep) { replyEmbed.Description = excep.Message; }
             } else {
                 replyEmbed.Description = "API key for this server not found on DB";
                 // Reply with the embed

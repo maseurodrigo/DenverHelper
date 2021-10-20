@@ -32,7 +32,7 @@ namespace DenverHelper.Modules
             if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
                 // Get JSON data of NBA team from API
                 String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
-                Team nbaTeam = TeamGetData.FromJson(await TeamClass.GetAPINBATeam(APIKey, _teamNick.Trim().ToLower()));
+                Team nbaTeam = TeamGetData.FromJson(await TeamClass.GetNBATeam(APIKey, _teamNick.Trim().ToLower()));
                 try {
                     // Build out the reply
                     replyEmbed.WithTitle(nbaTeam.Api.Teams.First().FullName);
@@ -40,75 +40,26 @@ namespace DenverHelper.Modules
                     replyEmbed.AddField("City", nbaTeam.Api.Teams.First().City, true);
                     replyEmbed.AddField("Abbreviation", nbaTeam.Api.Teams.First().ShortName, false);
                     // Loop through all team leagues
-                    replyEmbed.AddField("🏆 Leagues", new String('_', 8), false);
+                    replyEmbed.AddField("\u200b", "🏆 **Leagues**", false);
                     replyEmbed.AddField("Standard", $"{ nbaTeam.Api.Teams.First().Leagues.Standard.ConfName } ({ nbaTeam.Api.Teams.First().Leagues.Standard.DivName })", true);
                     replyEmbed.AddField("Vegas", $"{ nbaTeam.Api.Teams.First().Leagues.Vegas.ConfName } ({ nbaTeam.Api.Teams.First().Leagues.Vegas.DivName })", true);
                     replyEmbed.AddField("Utah", $"{ nbaTeam.Api.Teams.First().Leagues.Utah.ConfName } ({ nbaTeam.Api.Teams.First().Leagues.Utah.DivName })", true);
                     replyEmbed.AddField("Sacramento", $"{ nbaTeam.Api.Teams.First().Leagues.Sacramento.ConfName } ({ nbaTeam.Api.Teams.First().Leagues.Sacramento.DivName })", true);
                     // Loop through all team players
-                    TeamPlayers nbaTeamPlayers = TeamPlayersGetData.FromJson(await TeamPlayersClass.GetAPINBATeam(APIKey, nbaTeam.Api.Teams.First().TeamId));
-                    replyEmbed.AddField("🏀 Players", new String('_', 8), false);
+                    TeamPlayers nbaTeamPlayers = TeamPlayersGetData.FromJson(await TeamPlayersClass.GetNBATeamPlayers(APIKey, nbaTeam.Api.Teams.First().TeamId));
+                    replyEmbed.AddField("\u200b", "🏀 **Players**", false);
                     // Loop through all team members
                     foreach (TeamPlayersData player in nbaTeamPlayers.Api.Players) {
                         try {
-                            if(String.IsNullOrWhiteSpace(player.LastName)) replyEmbed.AddField(player.FirstName, new String('-', 1), true);
+                            if(String.IsNullOrWhiteSpace(player.LastName)) replyEmbed.AddField(player.FirstName, "\u200b", true);
                             else replyEmbed.AddField(player.FirstName, player.LastName, true);
                         } catch (ArgumentException) { }
                     }
-                    replyEmbed.WithFooter(footer => { footer.WithText("API-Basketball"); footer.WithIconUrl("https://bit.ly/3ogprjM"); });
-                } catch (NullReferenceException) {
-                    replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
-                } catch (WebException) {
-                    replyEmbed.Description = "My apologies, I honestly don't know this team...";
-                } catch (JsonReaderException) {
-                    replyEmbed.Description = "I couldn't get results for this command";
-                } catch (ArgumentException) {
-                    replyEmbed.Description = "I don't have complete data on this team";
-                }
-            } else replyEmbed.Description = "API key for this server not found on DB";
-            // Close local connection
-            await conn.closeConnection();
-            // Reply with the embed
-            await ReplyAsync(null, false, replyEmbed.Build(), null, null, new MessageReference(Context.Message.Id));
-        }
-
-        [Command("nba_player")]
-        [RequireBotPermission(ChannelPermission.SendMessages)]
-        [Summary("Get informations relating to the given NBA player")]
-        public async Task getPlayerData([Remainder][Summary("Player name")] String _player) {
-            // Embed layout reply
-            EmbedBuilder replyEmbed = new EmbedBuilder();
-            replyEmbed.WithColor(embedsColor);
-            // Trigger typing state on current channel
-            await Context.Channel.TriggerTypingAsync();
-            MySQLConnect conn = new MySQLConnect(botData);
-            if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
-                // Get JSON data of the given city from APIs
-                String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
-                Player nbaPlayer = PlayerGetData.FromJson(await PlayerClass.GetAPINBAPlayer(APIKey, _player.Trim().ToLower()));
-                try {
-                    // Build out the reply
-                    replyEmbed.Title = $"**{ nbaPlayer.Api.Players.First().FirstName } { nbaPlayer.Api.Players.First().LastName }**";
-                    replyEmbed.AddField($"First Name", nbaPlayer.Api.Players.First().FirstName, true);
-                    replyEmbed.AddField($"Last Name", nbaPlayer.Api.Players.First().LastName, true);
-                    replyEmbed.AddField($"Country", nbaPlayer.Api.Players.First().Country, true);
-                    replyEmbed.AddField($"Date of Birth", nbaPlayer.Api.Players.First().DateOfBirth.ToString("d"), true);
-                    replyEmbed.AddField($"Height", nbaPlayer.Api.Players.First().HeightInMeters, true);
-                    replyEmbed.AddField($"Weight", nbaPlayer.Api.Players.First().WeightInKilograms, true);
-                    replyEmbed.AddField($"Start on NBA", nbaPlayer.Api.Players.First().StartNba, true);                    
-                    replyEmbed.AddField($"Years on NBA", nbaPlayer.Api.Players.First().YearsPro, true);
-                    replyEmbed.WithFooter(footer => { footer.WithText("API-Basketball"); footer.WithIconUrl("https://bit.ly/3ogprjM"); });
-                } catch (NullReferenceException) {
-                    replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
-                } catch (WebException) {
-                    replyEmbed.Description = "Sorry boss, I think this is not a player...";
-                } catch (JsonReaderException) {
-                    replyEmbed.Description = "I couldn't get results for this command";
-                } catch (ArgumentException) {
-                    replyEmbed.Description = "I don't have complete data on this player";
-                } catch (Discord.Net.HttpException excep) {
-                    replyEmbed.Description = excep.Message;
-                }
+                } 
+                catch (NullReferenceException) { replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key"; } 
+                catch (WebException) { replyEmbed.Description = "My apologies, I honestly don't know this team..."; } 
+                catch (JsonReaderException) { replyEmbed.Description = "I couldn't get results for this command"; } 
+                catch (ArgumentException) { replyEmbed.Description = "I don't have complete data on this team"; }
             } else replyEmbed.Description = "API key for this server not found on DB";
             // Close local connection
             await conn.closeConnection();

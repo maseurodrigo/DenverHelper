@@ -132,29 +132,5 @@ namespace DenverHelper.Modules
                 await sent.AddReactionsAsync(emojiCodes.ToArray());
             }
         }
-
-        [Command("random")]
-        [Alias("rand")]
-        [RequireBotPermission(ChannelPermission.SendMessages)]
-        [Summary("Generate random data for the information provided")]
-        public async Task randomData([Remainder][Summary("Data to randomize")] String _message) {
-            // Embed layout reply
-            EmbedBuilder replyEmbed = new EmbedBuilder();
-            replyEmbed.WithColor(new Color(144, 164, 174));
-            // Trigger typing state on current channel
-            await Context.Channel.TriggerTypingAsync();
-            try {
-                String[] arrayData = null;
-                char[] splitOpts = new char[] { ',', '|', '/' };
-                // Get all parameters to randomize
-                if (_message.IndexOfAny(splitOpts) != -1) 
-                    arrayData = _message.Split(_message[_message.IndexOfAny(splitOpts)]);
-                replyEmbed.Description = $"`{ arrayData[new Random().Next(0, arrayData.Length)].Trim() }` was the chosen!";
-            } catch (ArgumentOutOfRangeException) {
-                replyEmbed.Description = "I'm sorry, but an error occurred during the random operation";
-            }
-            // Reply with the embed
-            await ReplyAsync(null, false, replyEmbed.Build(), null, null, new MessageReference(Context.Message.Id));
-        }
     }
 }

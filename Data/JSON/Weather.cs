@@ -6,7 +6,7 @@ using RestSharp;
 namespace DenverHelper.Data.JSON
 {
     public partial class WeatherClass {
-        public static async Task<String> GetWeatherAPIData(String _WeatherAPIKey, String _city) {
+        public static async Task<String> GetWeatherData(String _WeatherAPIKey, String _city) {
             // Get and return weather data (given city name)
             RestClient restClient = new RestClient($"https://weatherapi-com.p.rapidapi.com/current.json?q={ _city }");
             RestRequest reqst = new RestRequest(Method.GET);

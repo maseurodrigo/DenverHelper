@@ -3,7 +3,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
 using Discord.Addons.Interactive;
 using DenverHelper.Data;
 using DenverHelper.Data.JSON;
@@ -52,72 +51,11 @@ namespace DenverHelper.Modules
                         strBuilder.AppendLine($"{ icon7Days }{ new String(' ', 3) }7D Change: { tmpLast7Days.ToString("0.00") } %");
                         replyEmbed.Description = strBuilder.ToString();
                         replyEmbed.WithThumbnailUrl(cryptoData.Image.Large.AbsoluteUri);
-                        replyEmbed.WithFooter(footer => { footer.WithText("CoinGecko"); footer.WithIconUrl("https://bit.ly/3ANPn9S"); });
                     }
-                } catch (NullReferenceException) {
-                    replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
-                } catch (ArgumentNullException) {
-                    replyEmbed.Description = "I think this doesn't match any cryptocurrency name...";
-                } catch (JsonReaderException) {
-                    replyEmbed.Description = "I couldn't get results for this command";
-                }
-            } else replyEmbed.Description = "API key for this server not found on DB";
-            // Close local connection
-            await conn.closeConnection();
-            // Reply with the embed
-            await ReplyAsync(null, false, replyEmbed.Build(), null, null, new MessageReference(Context.Message.Id));
-        }
-
-        [Command("convert")]
-        [RequireBotPermission(ChannelPermission.SendMessages)]
-        [Summary("Get the value in the given cryptocurrency for the indicated dollar value")]
-        public async Task convCryptoPrice([Remainder][Summary("Crypto coin")] String _coin) {
-            // Initialize empty string builder for reply
-            StringBuilder strBuilder = new StringBuilder();
-            // Embed layout reply
-            EmbedBuilder replyEmbed = new EmbedBuilder();
-            replyEmbed.WithColor(new Color(33, 150, 243));
-            // Trigger typing state on current channel
-            await Context.Channel.TriggerTypingAsync();
-            MySQLConnect conn = new MySQLConnect(botData);
-            if (await MySQLAPIKeys.checkAPIKeyExists(conn, Context.Guild.Id)) {
-                try {
-                    // Waiting for an input of a valid numeric value
-                    await ReplyAsync("Amount of dollars ?");
-                    int dollars;
-                    SocketMessage response = await NextMessageAsync(true, true, TimeSpan.FromSeconds(10));
-                    if (response != null) {
-                        if (int.TryParse(response.Content.Trim(), out dollars)) {
-                            // Valid emoji reaction
-                            await response.AddReactionAsync(new Emoji("👍"));
-                            // Trigger typing state on current channel
-                            await Context.Channel.TriggerTypingAsync();
-                            // Get JSON data of the given crypto name from API
-                            String APIKey = await MySQLAPIKeys.getAPIKey(conn, Context.Guild.Id);
-                            CryptoData cryptoData = CryptoGetData.FromJson(await CryptoClass.GetCryptoData(APIKey, _coin.Trim().ToLower()));
-                            if (String.IsNullOrWhiteSpace(cryptoData.Symbol)) {
-                                replyEmbed.Description = "I think this doesn't match any cryptocurrency name...";
-                            } else {
-                                // Build out the reply
-                                replyEmbed.Title = $"Dollars to { cryptoData.Name }";
-                                double convCrypto = dollars / Convert.ToDouble(cryptoData.Market.CurrentPrice.Usd);
-                                strBuilder.AppendLine($"🔄{ new String(' ', 3) }You will get **{ convCrypto.ToString("0.0000") }** { cryptoData.Name } ({ cryptoData.Symbol }) for { dollars } dollars");
-                                replyEmbed.Description = strBuilder.ToString();
-                                replyEmbed.WithFooter(footer => { footer.WithText("CoinGecko"); footer.WithIconUrl("https://bit.ly/3ANPn9S"); });
-                            }
-                        } else {
-                            // Invalid emoji reaction
-                            await response.AddReactionAsync(new Emoji("👎"));
-                            replyEmbed.Description = "Invalid numeric value";
-                        }
-                    } else await ReplyAsync($"{ Context.User.Mention } you didnt reply before the timeout"); // response timeout
-                } catch(NullReferenceException) {
-                    replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key";
-                } catch (ArgumentNullException) {
-                    replyEmbed.Description = "I think this doesn't match any cryptocurrency name...";
-                } catch (JsonReaderException) {
-                    replyEmbed.Description = "I couldn't get results for this command";
-                }
+                } 
+                catch (NullReferenceException) { replyEmbed.Description = "My apologies, but it looks like there are invalid parameter(s) or an invalid API key"; } 
+                catch (ArgumentNullException) { replyEmbed.Description = "I think this doesn't match any cryptocurrency name..."; } 
+                catch (JsonReaderException) { replyEmbed.Description = "I couldn't get results for this command"; }
             } else replyEmbed.Description = "API key for this server not found on DB";
             // Close local connection
             await conn.closeConnection();
