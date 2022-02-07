@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
@@ -32,12 +33,15 @@ namespace DenverHelper
             try {
                 // Load up from JSON file all bot required data
                 BotData botData = JsonConvert.DeserializeObject<BotData>(File.ReadAllText(@"BotData.json"));
+                GiveawayList giveawayList = new GiveawayList();
+                giveawayList.Giveaway = new Dictionary<ulong, GiveawayData>();
                 discordService
                     .AddSingleton(discordClient)
                     .AddSingleton(new CommandService(serviceConfig))
                     .AddSingleton(new InteractiveService(discordClient))
                     .AddSingleton<BotService>()
                     .AddSingleton(botData)
+                    .AddSingleton(giveawayList)
                     .AddSingleton<CommHandler>();
             } catch (FileNotFoundException excep) { Console.WriteLine(excep.Message); }
             ServiceProvider serviceProvider = discordService.BuildServiceProvider();

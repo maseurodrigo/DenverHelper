@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using DenverHelper.Data;
 using Discord;
+using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.Net;
 using Discord.WebSocket;
@@ -10,11 +14,17 @@ using Discord.WebSocket;
 namespace DenverHelper.Modules
 {
     [Summary("General Discord Commands")]
-    public class GeneralComms : ModuleBase<SocketCommandContext>
+    public class GeneralComms : InteractiveBase
     {
         // Getting all services through constructor param with AddSingleton()
         private readonly CommandService commandService;
-        private GeneralComms(CommandService _commandService) => commandService = _commandService;
+        private BotData botData { get; }
+        private GiveawayList giveawayList { get; set; }
+        private GeneralComms(CommandService _commandService, BotData _BotData, GiveawayList _GiveawayList) {
+            commandService = _commandService;
+            botData = _BotData;
+            giveawayList = _GiveawayList;
+        }
 
         [Command("help")]
         [RequireBotPermission(ChannelPermission.SendMessages)]
@@ -131,6 +141,135 @@ namespace DenverHelper.Modules
                 // Add reactions to the poll.
                 await sent.AddReactionsAsync(emojiCodes.ToArray());
             }
+        }
+
+        [Command("giveaway")]
+        [RequireBotPermission(GuildPermission.Administrator)]
+        [Summary("Create a new giveaway with custom params.")]
+        public async Task newGiveaway() {
+            Color embColor = new Color(144, 164, 174);
+            // Start and end giveaway embeds
+            EmbedBuilder giveStartEmbed = new EmbedBuilder();
+            giveStartEmbed.WithColor(embColor);
+            EmbedBuilder giveEndEmbed = new EmbedBuilder();
+            giveEndEmbed.WithColor(embColor);
+
+            // Check if theres already an active giveaway on the server
+            if (!giveawayList.Giveaway.ContainsKey(Context.Guild.Id)) {
+                // Instance context user data
+                SocketGuildUser contextUser = Context.User as SocketGuildUser;
+                GuildPermissions userGuildPerms = contextUser.GuildPermissions;
+                GiveawayData localGiveaway = new GiveawayData();
+                int tmpReplyData;
+                // Waiting for an input of a valid string
+                await ReplyAsync("Giveaway title ?");
+                SocketMessage respTitle = await NextMessageAsync(true, true, TimeSpan.FromSeconds(15));
+                if (respTitle != null) {
+                    localGiveaway.Title = respTitle.ToString();
+                    // Waiting for an input of a valid numeric value
+                    await ReplyAsync("Number of parameters ?");
+                    SocketMessage respParams = await NextMessageAsync(true, true, TimeSpan.FromSeconds(10));
+                    if (respParams != null) {
+                        if (int.TryParse(respParams.Content.Trim(), out tmpReplyData)) {
+                            localGiveaway.Params = tmpReplyData;
+                            await ReplyAsync("Number of seconds ?");
+                            SocketMessage respTimer = await NextMessageAsync(true, true, TimeSpan.FromSeconds(10));
+                            if (respTimer != null) {
+                                if (int.TryParse(respTimer.Content.Trim(), out tmpReplyData)) {
+                                    localGiveaway.Timer = tmpReplyData;
+                                    await ReplyAsync("Number of winners ?");
+                                    SocketMessage respWinners = await NextMessageAsync(true, true, TimeSpan.FromSeconds(10));
+                                    if (respWinners != null) {
+                                        if (int.TryParse(respWinners.Content.Trim(), out tmpReplyData)) {
+                                            localGiveaway.Winners = tmpReplyData;
+                                            localGiveaway.Active = true;
+                                            giveawayList.Giveaway.Add(Context.Guild.Id, localGiveaway);
+
+                                            // Filling start giveaway embed
+                                            EmbedAuthorBuilder giveTitle = new EmbedAuthorBuilder();
+                                            giveTitle.Name = $"🎉 { localGiveaway.Title } Giveaway";
+                                            giveStartEmbed.WithAuthor(giveTitle);
+                                            giveStartEmbed.AddField("Param(s)", localGiveaway.Params, true);
+                                            giveStartEmbed.AddField("Time", String.Concat(localGiveaway.Timer, "secs."), true);
+                                            giveStartEmbed.AddField("Winner(s)", localGiveaway.Winners, true);
+
+                                            StringBuilder strEntrie = new StringBuilder();
+                                            strEntrie.Append(botData.BotPrefix);
+                                            strEntrie.Append("givejoin");
+                                            for (int i = 0; i < localGiveaway.Params; i++) {
+                                                if (i.Equals(0)) strEntrie.Append(String.Concat(" ", localGiveaway.Title));
+                                                else strEntrie.Append(String.Concat("_", localGiveaway.Title));
+                                            }
+                                            giveStartEmbed.AddField("Entry Example", strEntrie, false);
+
+                                            EmbedFooterBuilder giveFooter = new EmbedFooterBuilder();
+                                            giveFooter.IconUrl = contextUser.GetAvatarUrl();
+                                            giveFooter.Text = $"Started by { contextUser.Username }";
+                                            giveStartEmbed.WithFooter(giveFooter);
+                                            await ReplyAsync(null, false, giveStartEmbed.Build(), null, null, new MessageReference(Context.Message.Id));
+
+                                            // Suspend current thread waiting for entries
+                                            Thread.Sleep((localGiveaway.Timer) * 1000);
+
+                                            // Giveaway winners list
+                                            Dictionary<ulong, String> listWinners = new Dictionary<ulong, String>();
+                                            // Check if the number of entries is greater than the winners
+                                            if (giveawayList.Giveaway[Context.Guild.Id].ListUsers.Count > localGiveaway.Winners) {
+                                                // Registered user ids list
+                                                List<ulong> listEntries = new List<ulong>(giveawayList.Giveaway[Context.Guild.Id].ListUsers.Keys);
+                                                Random rng = new Random();
+                                                List<ulong> shuffleEntries;
+                                                for(int i = 0; i < localGiveaway.Winners; i++) {
+                                                    shuffleEntries = listEntries.OrderBy(a => rng.Next()).ToList();
+                                                    listWinners.Add(shuffleEntries[0], giveawayList.Giveaway[Context.Guild.Id].ListUsers[shuffleEntries[0]]);
+                                                }
+                                            } else listWinners = giveawayList.Giveaway[Context.Guild.Id].ListUsers;
+                                            giveawayList.Giveaway.Remove(Context.Guild.Id);
+                                            giveEndEmbed.Title = "Giveaway finished";
+                                            await ReplyAsync(null, false, giveEndEmbed.Build(), null, null, new MessageReference(Context.Message.Id));
+
+                                            // Send list of winners to the creator
+                                            EmbedBuilder giveWinnersEmbed = new EmbedBuilder();
+                                            giveWinnersEmbed.WithColor(embColor);
+                                            EmbedAuthorBuilder giveWinnersTitle = new EmbedAuthorBuilder();
+                                            giveWinnersTitle.Name = $"🎉 { localGiveaway.Title } Giveaway Winner(s)";
+                                            giveWinnersEmbed.WithAuthor(giveWinnersTitle);
+                                            foreach (KeyValuePair<ulong, String> entry in listWinners) 
+                                                giveWinnersEmbed.AddField(entry.Key.ToString(), entry.Value, false);
+                                            // DM reply with the creator embed
+                                            if (userGuildPerms.Administrator) 
+                                                await contextUser.SendMessageAsync(null, false, giveWinnersEmbed.Build());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        [Command("givejoin")]
+        [Alias("giveawayjoin")]
+        [RequireBotPermission(ChannelPermission.SendMessages)]
+        [Summary("Join current giveaway")]
+        public async Task joinGiveaway([Remainder][Summary("Full giveaway query")] String _fullArgs) {
+            // Check active giveaway for current server
+            if (giveawayList.Giveaway.ContainsKey(Context.Guild.Id) && giveawayList.Giveaway[Context.Guild.Id].Active is true) {
+                // Validate user entry data
+                if (_fullArgs.Contains('_')) {
+                    if (_fullArgs.Split('_').Count().Equals(giveawayList.Giveaway[Context.Guild.Id].Params)) {
+                        // Already registered
+                        if (giveawayList.Giveaway[Context.Guild.Id].ListUsers.ContainsKey(Context.User.Id)) 
+                            await Context.Message.AddReactionAsync(new Emoji("🤙"));
+                        else {
+                            // New entry
+                            giveawayList.Giveaway[Context.Guild.Id].ListUsers.Add(Context.User.Id, _fullArgs);
+                            await Context.Message.AddReactionAsync(new Emoji("👍"));
+                        }
+                    } else { await Context.Message.AddReactionAsync(new Emoji("👎")); }
+                } else await Context.Message.AddReactionAsync(new Emoji("👎"));
+            } else await Context.Message.AddReactionAsync(new Emoji("❌"));
         }
     }
 }

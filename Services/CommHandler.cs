@@ -16,14 +16,16 @@ namespace DenverHelper.Services
         public static InteractiveService discordInteractive { get; set; }
         public static IServiceProvider discordService { get; set; }
         public static BotData botData { get; set; }
+        public static GiveawayList giveawayList { get; set; }
 
         public CommHandler(DiscordSocketClient _discordClient, CommandService _discordCommands, InteractiveService _discordInteractive,
-            IServiceProvider _discordService, BotData _botData) {
+            IServiceProvider _discordService, BotData _botData, GiveawayList _giveawayList) {
             discordClient = _discordClient;
             discordCommands = _discordCommands;
             discordInteractive = _discordInteractive;
             discordService = _discordService;
             botData = _botData;
+            giveawayList = _giveawayList;
             // DiscordSocketClient functions
             discordClient.MessageReceived += client_NewCommandReceived;
             discordClient.Log += botLogEvents;

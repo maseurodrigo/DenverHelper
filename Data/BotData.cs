@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace DenverHelper.Data
@@ -14,5 +15,14 @@ namespace DenverHelper.Data
         [JsonProperty("UserID")] public String UserID { get; set; }
         [JsonProperty("UserPW")] public String UserPW { get; set; }
         [JsonProperty("Database")] public String Database { get; set; }
+    }
+
+    public class GiveawayList { public Dictionary<ulong, GiveawayData> Giveaway { get; set; } }
+
+    public class GiveawayData {
+        public String Title;
+        public int Params, Timer, Winners;
+        public bool Active;
+        public Dictionary<ulong, String> ListUsers = new Dictionary<ulong, String>();
     }
 }
