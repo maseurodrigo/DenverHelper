@@ -12,10 +12,10 @@ namespace DenverHelper.Data.MySQL
         private MySqlConnection myConn { get; set; }
         public MySQLConnect(BotData _BotData) {
             myConnBuilder = new MySqlConnectionStringBuilder {
-                Server = _BotData.MySQLConnect.ServerID,
-                UserID = _BotData.MySQLConnect.UserID,
-                Password = _BotData.MySQLConnect.UserPW,
-                Database = _BotData.MySQLConnect.Database,
+                Server = _BotData.MySQLConnect.Server,
+                UserID = _BotData.MySQLConnect.UserName,
+                Password = _BotData.MySQLConnect.UserPWord,
+                Database = _BotData.MySQLConnect.Database
             };
         }
 

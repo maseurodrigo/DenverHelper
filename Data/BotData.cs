@@ -11,9 +11,9 @@ namespace DenverHelper.Data
     }
 
     public class MySQLConnectData {
-        [JsonProperty("Server")] public String ServerID { get; set; }
-        [JsonProperty("UserID")] public String UserID { get; set; }
-        [JsonProperty("UserPW")] public String UserPW { get; set; }
+        [JsonProperty("Server")] public String Server { get; set; }
+        [JsonProperty("UserName")] public String UserName { get; set; }
+        [JsonProperty("UserPWord")] public String UserPWord { get; set; }
         [JsonProperty("Database")] public String Database { get; set; }
     }
 
