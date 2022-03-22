@@ -18,6 +18,8 @@
 | **nba_team** |  | Get data from an NBA team |
 | **price** |  | Get the price of some cryptocurrencies and their status |
 | **poll** |  | Create a new poll with emojis reactions - **(question) / a(👍), b(👎), c(👌), ...** |
+| **giveaway** |  | Create a new giveaway with custom options |
+| **givejoin** | **giveawayjoin**  | Join a current giveaway on the server |
 
 ```json
 {
