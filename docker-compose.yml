@@ -1,0 +1,14 @@
+version: '3.9'
+networks:
+    mysql:
+        external: true
+services:
+    denverhelper:
+        container_name: denverhelper
+        image: denverhelper:latest
+        restart: always
+        build:
+            context: ./
+            dockerfile: ./Dockerfile
+        networks:
+            - mysql
